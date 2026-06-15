@@ -1,0 +1,1358 @@
+---
+title: "Aula 15 — Quando o Significado Importa Mais que a Palavra"
+subtitle: "Embeddings, transformers e análise de sentimentos para enriquecer o Trabalho Final — Bacharelado em Ciência de Dados, CEUB"
+author: "Prof. MSc. Weslley Rodrigues · Disciplina: Recuperação da Informação · 2026.1"
+date: today
+date-format: "DD/MM/YYYY"
+format:
+  html:
+    theme: flatly
+    toc: true
+    toc-depth: 3
+    toc-title: "Navegação"
+    number-sections: true
+    code-fold: show
+    code-tools: true
+    df-print: kable
+    highlight-style: tango
+    self-contained: true
+    include-in-header:
+      text: |
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+        <style>
+          :root {
+            --bg-primary:    #ffffff;
+            --bg-secondary:  #f8f9fa;
+            --bg-card:       #ffffff;
+            --bg-card-hover: #f1f3f5;
+            --accent-primary:   #662c92;
+            --accent-secondary: #bf0087;
+            --accent-warm:      #ec0089;
+            --accent-amber:     #eab308;
+            --text-primary:  #1f2937;
+            --text-secondary: #4b5563;
+            --text-muted:    #6b7280;
+            --border-subtle: #e5e7eb;
+            --glow-primary:  rgba(102, 44, 146, 0.05);
+            --glow-secondary: rgba(191, 0, 135, 0.05);
+          }
+          body { font-family: 'Inter', -apple-system, sans-serif !important; background: var(--bg-primary) !important; color: var(--text-primary) !important; line-height: 1.75; font-size: 16px; }
+          .quarto-title h1.title { font-weight: 900 !important; font-size: 2.4rem !important; color: var(--accent-primary) !important; letter-spacing: -0.02em; line-height: 1.15; }
+          .quarto-title .subtitle { color: var(--text-secondary) !important; font-weight: 400; font-size: 1.05rem !important; margin-top: 0.5rem; }
+          .quarto-title-meta { color: var(--text-muted) !important; border-top: 1px solid var(--border-subtle); padding-top: 1rem; }
+          #quarto-margin-sidebar, .sidebar { background: var(--bg-secondary) !important; border-right: 1px solid var(--border-subtle); }
+          #toc-title { color: var(--accent-primary) !important; font-weight: 700; text-transform: uppercase; font-size: 0.73rem; letter-spacing: 0.14em; }
+          #TOC a { color: var(--text-secondary) !important; font-size: 0.87rem; border-left: 2px solid transparent; padding-left: 0.8rem; transition: all 0.2s ease; }
+          #TOC a:hover, #TOC a.active { color: var(--accent-primary) !important; border-left-color: var(--accent-primary); background: var(--glow-primary); }
+          h1, h2, h3, h4 { font-family: 'Inter', sans-serif !important; color: var(--accent-primary) !important; }
+          h1 { font-weight: 700 !important; font-size: 1.7rem !important; padding-bottom: 0.6rem; border-bottom: 2px solid var(--border-subtle); margin-top: 2.8rem !important; }
+          h1 .header-section-number { color: var(--accent-secondary) !important; font-weight: 900; margin-right: 0.5rem; }
+          h2 { font-size: 1.3rem !important; color: var(--accent-secondary) !important; font-weight: 600 !important; }
+          h3 { font-size: 1.05rem !important; color: var(--text-primary) !important; }
+          strong { color: var(--accent-primary); font-weight: 700; }
+          em { color: var(--accent-secondary); font-style: normal; font-weight: 600;}
+          a { color: var(--accent-secondary) !important; text-decoration: none; }
+          a:hover { color: var(--accent-primary) !important; text-decoration: underline; }
+          code { font-family: 'JetBrains Mono', monospace !important; font-size: 0.84em; background: var(--bg-secondary) !important; color: var(--accent-primary) !important; padding: 0.15em 0.45em; border-radius: 5px; border: 1px solid var(--border-subtle); }
+          pre { background: var(--bg-secondary) !important; border: 1px solid var(--border-subtle) !important; border-radius: 8px !important; padding: 1.3rem !important; }
+          pre code { background: transparent !important; border: none !important; padding: 0 !important; color: var(--text-primary) !important; font-size: 0.84rem; }
+          .table thead th { background: var(--bg-secondary) !important; color: var(--accent-primary) !important; font-weight: 700; border-bottom: 2px solid var(--border-subtle) !important; padding: 0.8rem 1rem !important; }
+          .table-striped tbody tr:nth-of-type(odd) td { background: var(--bg-secondary) !important; }
+          hr { border: none !important; height: 1px !important; background: var(--border-subtle) !important; margin: 2.8rem 0 !important; }
+          .callout { border-radius: 8px !important; border: 1px solid var(--border-subtle) !important; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin: 1.6rem 0; }
+          .callout-note { border-left: 4px solid var(--accent-primary) !important; }
+          .callout-tip { border-left: 4px solid var(--accent-secondary) !important; }
+          .callout-important { border-left: 4px solid var(--accent-warm) !important; }
+          .callout-warning { border-left: 4px solid var(--accent-amber) !important; }
+          .insight-panel { background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-left: 4px solid var(--accent-primary); border-radius: 8px; padding: 1.2rem 1.5rem; margin: 1.4rem 0 1.8rem 0; }
+          .insight-panel .panel-titulo { color: var(--accent-primary); font-weight: 700; font-size: 0.9rem; margin-bottom: 0.6rem; text-transform: uppercase; letter-spacing: 0.06em; }
+          .insight-panel p { color: var(--text-secondary); font-size: 0.93rem; line-height: 1.7; margin-bottom: 0.4rem; }
+          .badge-curso { display: inline-flex; align-items: center; gap: 0.6rem; background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-left: 3px solid var(--accent-primary); border-radius: 4px; padding: 0.5rem 1.2rem; font-size: 0.82rem; font-weight: 600; color: var(--text-primary); letter-spacing: 0.03em; margin-bottom: 1.5rem; }
+          blockquote { background: var(--bg-secondary) !important; border-left: 4px solid var(--accent-primary) !important; border-radius: 0 8px 8px 0; padding: 1rem 1.5rem !important; color: var(--text-secondary) !important; margin: 1rem 0; }
+        </style>
+jupyter: python3
+execute:
+  echo: true
+  warning: false
+  message: false
+editor: visual
+freeze: auto
+---
+
+# A pergunta que define esta aula
+
+::: badge-curso
+Bacharelado em Ciência de Dados — CEUB/DF — RDI 2026.1
+:::
+
+Na semana passada, vocês usaram **TF-IDF e similaridade do cosseno** para ranquear vagas do LinkedIn contra três perfis profissionais. O modelo funcionou — mas funcionou *lexicalmente*. Ele compara **palavras**, não **significados**.
+
+Vou começar com um caso real que vamos resolver nesta aula:
+
+> Uma vaga descreve: *"Profissional para trabalhar com modelos generativos e LLMs em produção."*
+>
+> Um perfil de candidato declara: *"Cientista de dados que atua com inteligência artificial."*
+
+Para o TF-IDF, essas duas frases têm similaridade **próxima de zero** — não compartilham nenhuma palavra significativa. Para um recrutador humano, são quase a mesma coisa.
+
+> **A pergunta da aula:** como ensinamos a máquina a ver o que o recrutador vê?
+
+A resposta passa por uma das transformações mais importantes da Recuperação da Informação dos últimos dez anos: **deixar de representar texto por palavras e passar a representar por significado**. Isso se chama **embedding denso**, e é a base técnica do que vocês conhecem como BERT, GPT e qualquer sistema moderno de busca semântica.
+
+::: callout-note
+## Intenções desta aula
+
+1.  Demonstrar **onde o TF-IDF falha** com um caso concreto e mensurável
+2.  Introduzir **embeddings densos** com `sentence-transformers` (família BERT) na prática, em CPU, sem GPU
+3.  Reescrever o *match* de perfis da aula anterior usando embeddings e comparar resultados
+4.  Mostrar que **a mesma matemática serve para análise de sentimentos** — técnica de *zero-shot classification* via cosseno
+5.  Praticar o desenho de âncoras próprias em um **exercício relâmpago em duplas**
+6.  Aplicar o pipeline nos **dados reais do State of Data Brasil** (17 mil respondentes) e medir a acurácia do zero-shot contra os rótulos disponíveis
+7.  Entregar um **roteiro objetivo** de como integrar embeddings ao trabalho do grupo
+:::
+
+------------------------------------------------------------------------
+
+# Setup e diagnóstico do ambiente
+
+Antes de qualquer linha de modelagem, vamos garantir que o ambiente está pronto. Esta aula usa o modelo `paraphrase-multilingual-MiniLM-L12-v2` — um *transformer* multilíngue da família BERT, com cerca de **117 MB**, que roda em CPU e baixa **uma única vez** (depois fica em cache local).
+
+## Instalação automática das dependências
+
+::: callout-important
+## Por que esta célula existe
+
+Um erro comum: o `pip` do terminal instala os pacotes em **um** Python, mas o Quarto renderiza usando **outro**. Resultado: o pacote "está instalado" e mesmo assim dá `ModuleNotFoundError`.
+
+A célula abaixo elimina esse problema. Ela instala os pacotes que faltarem **no mesmo Python que está renderizando este documento** (`sys.executable`). Funciona em qualquer máquina, sem você precisar adivinhar qual Python o Quarto escolheu.
+:::
+
+```{python}
+#| label: bootstrap-instalacao
+#| echo: true
+#| cache: false
+
+import sys
+import platform
+import importlib.util
+import subprocess
+
+print(f"Python do Quarto: {sys.version.split()[0]}")
+print(f"Caminho:          {sys.executable}")
+print(f"Sistema:          {platform.system()} {platform.machine()}\n")
+
+# Mapeia nome-de-import -> nome-no-pip (quando diferentes)
+PACOTES = {
+    "numpy":                 "numpy",
+    "pandas":                "pandas",
+    "matplotlib":            "matplotlib",
+    "seaborn":               "seaborn",
+    "sklearn":               "scikit-learn",
+    "pyarrow":               "pyarrow",
+    "fastparquet":           "fastparquet",   # leitor de parquet alternativo (rede de segurança)
+    "sentence_transformers": "sentence-transformers",
+}
+
+# Detectar o que falta
+faltando = [pip_name for mod, pip_name in PACOTES.items()
+            if importlib.util.find_spec(mod) is None]
+
+if not faltando:
+    print("Todas as dependências já estão instaladas. Pode seguir.")
+else:
+    print(f"Instalando no Python do Quarto: {faltando}")
+    print("(Na primeira vez baixa o PyTorch + modelo; pode levar alguns minutos.)\n")
+
+    base_cmd = [sys.executable, "-m", "pip", "install", "--quiet"]
+    resultado = subprocess.run(base_cmd + faltando)
+
+    # Pythons mais novos (Linux/Mac recentes) podem exigir esta flag
+    if resultado.returncode != 0:
+        print("Primeira tentativa falhou. Repetindo com --break-system-packages...")
+        subprocess.run(base_cmd + faltando + ["--break-system-packages"])
+
+    # Reverificar
+    ainda_faltando = [m for m in PACOTES
+                      if importlib.util.find_spec(m) is None]
+    if ainda_faltando:
+        print(f"\nAINDA FALTAM: {ainda_faltando}")
+        print("Reinicie o kernel (no RStudio: Session > Restart) e renderize de novo.")
+        print("Se persistir, veja o infocard de preparação (página 2).")
+    else:
+        print("\nInstalação concluída com sucesso.")
+        print("IMPORTANTE: se esta foi a primeira instalação, reinicie o kernel")
+        print("e renderize novamente para o Python reconhecer os novos pacotes.")
+```
+
+::: callout-tip
+## Se o render parar logo após instalar pela primeira vez
+
+É normal. Quando o Python instala um pacote durante a própria execução, às vezes ele não consegue importá-lo na mesma sessão. **Solução:** reinicie o kernel (no RStudio: *Session → Restart R*, ou feche e reabra) e clique em **Render** de novo. Na segunda vez, tudo já está instalado e o documento roda direto.
+:::
+
+## Confirmação do ambiente
+
+```{python}
+#| label: confirmacao-ambiente
+#| echo: true
+
+import importlib.util
+
+print("Verificação final das dependências:\n")
+todas_ok = True
+for mod in ["numpy", "pandas", "matplotlib", "seaborn",
+            "sklearn", "pyarrow", "sentence_transformers"]:
+    ok = importlib.util.find_spec(mod) is not None
+    todas_ok = todas_ok and ok
+    print(f"  [{'OK' if ok else 'FALTA'}]  {mod}")
+
+# fastparquet é opcional (rede de segurança para ler o parquet)
+tem_fastparquet = importlib.util.find_spec("fastparquet") is not None
+print(f"  [{'OK' if tem_fastparquet else '--'}]  fastparquet (opcional)")
+
+print()
+if todas_ok:
+    print("Ambiente pronto. Pode seguir para o Bloco 1.")
+else:
+    print("Algo ainda falta — reinicie o kernel e renderize de novo.")
+```
+
+## Importação e configuração visual
+
+```{python}
+#| label: setup-imports
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
+import seaborn as sns
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.decomposition import PCA
+import warnings
+warnings.filterwarnings("ignore")
+
+# Paleta CEUB — coerente com a aula anterior
+BG_DARK   = "#ffffff"
+BG_CARD   = "#f8f9fa"
+GRID_CLR  = "#e5e7eb"
+TEXT_MAIN = "#1f2937"
+TEXT_MUTED= "#6b7280"
+ACCENT_1  = "#662c92"   # roxo CEUB
+ACCENT_2  = "#bf0087"   # magenta
+ACCENT_3  = "#ec0089"   # rosa
+ACCENT_4  = "#eab308"   # âmbar
+PALETTE_4 = [ACCENT_1, ACCENT_2, ACCENT_3, ACCENT_4]
+
+def light_fig(w=10, h=5.5):
+    fig, ax = plt.subplots(figsize=(w, h))
+    fig.patch.set_facecolor(BG_DARK)
+    ax.set_facecolor(BG_CARD)
+    ax.tick_params(colors=TEXT_MUTED, labelsize=11)
+    ax.xaxis.label.set_color(TEXT_MUTED)
+    ax.yaxis.label.set_color(TEXT_MUTED)
+    ax.title.set_color(TEXT_MAIN)
+    for spine in ax.spines.values():
+        spine.set_edgecolor(GRID_CLR)
+    ax.grid(axis='y', color=GRID_CLR, linewidth=0.8, zorder=0)
+    return fig, ax
+
+plt.rcParams['figure.dpi'] = 110
+plt.rcParams['figure.figsize'] = [10, 5.5]
+np.random.seed(42)
+
+print("Ambiente pronto. Paleta CEUB ativa.")
+```
+
+------------------------------------------------------------------------
+
+# Bloco 1 — Onde o TF-IDF não consegue ver
+
+Vamos demonstrar de forma **mensurável** o ponto que abriu a aula. Construímos um corpus pequeno e propositadamente provocador: vagas reais e descrições de perfis de profissionais — com a particularidade de que algumas vagas e perfis falam da *mesma coisa* usando vocabulário *diferente*.
+
+## O corpus de demonstração
+
+```{python}
+#| label: corpus-demonstracao
+
+# Pequeno corpus de demonstração — vagas reais reescritas
+vagas_demo = [
+    "Procuramos profissional para desenvolver modelos generativos e LLMs em produção, com experiência em RAG.",
+    "Vaga para cientista de dados sênior com sólida experiência em Python, SQL e machine learning aplicado.",
+    "Engenheiro de dados para construção de pipelines em Spark, Airflow e ambientes em nuvem AWS.",
+    "Analista para criação de dashboards executivos em Power BI e análises de KPIs corporativos.",
+    "Posição para profissional de IA generativa com conhecimento em LangChain, embeddings e bancos vetoriais.",
+    "Estamos contratando para atuar com BI, Excel avançado e modelagem dimensional para o setor financeiro.",
+]
+
+# Perfis de candidatos — formulados com vocabulário deliberadamente diferente das vagas
+perfis_demo = [
+    "Cientista de dados que atua com inteligência artificial e quer crescer em projetos de fronteira.",
+    "Especialista em engenharia analítica, processamento distribuído e arquitetura de dados em larga escala.",
+    "Analista de negócios que entrega visualizações executivas e indicadores de desempenho.",
+]
+
+df_corpus = pd.DataFrame({
+    "tipo": (["vaga"] * len(vagas_demo)) + (["perfil"] * len(perfis_demo)),
+    "id":   list(range(len(vagas_demo))) + list(range(len(perfis_demo))),
+    "texto": vagas_demo + perfis_demo,
+})
+df_corpus
+```
+
+## Match lexical (TF-IDF) — o ponto de partida
+
+```{python}
+#| label: tfidf-demo
+
+vec_tfidf = TfidfVectorizer(lowercase=True)
+X_tfidf = vec_tfidf.fit_transform(vagas_demo + perfis_demo)
+
+# Separar matrizes de vagas e perfis
+M_vagas_tfidf  = X_tfidf[:len(vagas_demo)]
+M_perfis_tfidf = X_tfidf[len(vagas_demo):]
+
+sim_tfidf = cosine_similarity(M_perfis_tfidf, M_vagas_tfidf)
+
+df_tfidf = pd.DataFrame(
+    np.round(sim_tfidf, 3),
+    index=[f"Perfil {i+1}" for i in range(len(perfis_demo))],
+    columns=[f"Vaga {i+1}" for i in range(len(vagas_demo))]
+)
+df_tfidf
+```
+
+::: callout-warning
+## Olhem com atenção a célula `Perfil 1 × Vaga 1`
+
+O Perfil 1 fala em *"inteligência artificial"*. A Vaga 1 fala em *"modelos generativos e LLMs"*. Para qualquer pessoa da área, isso é a mesma coisa. Para o TF-IDF, **não há palavra em comum** — a similaridade é praticamente zero.
+
+Este é o caso que vamos consertar.
+:::
+
+------------------------------------------------------------------------
+
+# Bloco 2 — Embeddings: a representação que tem semântica
+
+## A ideia em uma frase
+
+Um **embedding** é uma transformação do texto em um vetor de números reais (no nosso caso, **384 dimensões**), construído por uma rede neural treinada com bilhões de tokens, de tal modo que **textos com significado próximo geram vetores próximos no espaço**.
+
+A geometria substitui o vocabulário:
+
+| Modelo              | Como compara textos           | O que enxerga         |
+|---------------------|------------------------------|----------------------|
+| **TF-IDF**          | Palavras em comum, ponderadas | Sobreposição lexical  |
+| **Embedding denso** | Direção dos vetores no espaço | Proximidade semântica |
+
+O modelo que vamos usar — `paraphrase-multilingual-MiniLM-L12-v2` — é uma versão destilada (mais leve) de um modelo BERT multilíngue. Ele foi treinado especificamente para que pares de frases **com o mesmo sentido**, em qualquer um dos 50+ idiomas suportados, terminem geometricamente perto no espaço de embeddings. Português inclusive.
+
+## Carregando o modelo (com cache local)
+
+```{python}
+#| label: carregar-modelo
+#| cache: true
+
+from sentence_transformers import SentenceTransformer
+import os
+
+MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+
+# O modelo é baixado uma única vez e fica em cache local (~/.cache/huggingface/)
+print(f"Carregando modelo: {MODEL_NAME}")
+print("Primeira execução: download de ~117 MB (5–8 min).")
+print("Execuções seguintes: instantâneo a partir do cache local.\n")
+
+modelo = SentenceTransformer(MODEL_NAME)
+
+print(f"Modelo carregado.")
+print(f"Dimensão dos embeddings: {modelo.get_sentence_embedding_dimension()}")
+print(f"Comprimento máximo de entrada: {modelo.max_seq_length} tokens")
+```
+
+::: callout-tip
+## Por que esse modelo, e não BERT inteiro ou GPT?
+
+Três motivos diretos:
+
+- **Peso.** O MiniLM tem 33M de parâmetros (vs. 110M do BERT-base). Cabe na RAM de qualquer notebook moderno.
+- **Velocidade.** Em CPU, codifica \~500 frases por segundo. Não precisamos de GPU.
+- **Multilíngue.** Foi treinado em paráfrases em 50+ idiomas. Lida bem com português.
+
+Para Trabalho Final, é o equilíbrio certo entre poder semântico e custo computacional. Modelos maiores (BERT-large, modelos da OpenAI) dão ganhos marginais para esta aplicação e custam muito mais.
+:::
+
+## Primeira demonstração: a mesma frase em palavras diferentes
+
+```{python}
+#| label: primeira-demo-embeddings
+
+frases_teste = [
+    "Modelos de aprendizado de máquina aplicados a problemas de negócio.",   # 0
+    "Machine learning aplicado a problemas reais de empresa.",              # 1 — paráfrase
+    "Inteligência artificial para análise de dados corporativos.",          # 2 — semanticamente próximo
+    "Receita de bolo de chocolate com cobertura.",                          # 3 — totalmente fora
+]
+
+# Codificar — retorna matriz (4, 384)
+emb_teste = modelo.encode(frases_teste, convert_to_numpy=True, show_progress_bar=False)
+print(f"Formato da matriz de embeddings: {emb_teste.shape}")
+
+# Matriz de similaridade
+sim_teste = cosine_similarity(emb_teste)
+
+df_sim_teste = pd.DataFrame(
+    np.round(sim_teste, 3),
+    index=[f"F{i}" for i in range(len(frases_teste))],
+    columns=[f"F{i}" for i in range(len(frases_teste))]
+)
+print("\nLegenda:")
+for i, f in enumerate(frases_teste):
+    print(f"  F{i} — {f}")
+print("\nMatriz de similaridade (cosseno):")
+df_sim_teste
+```
+
+:::: insight-panel
+::: panel-titulo
+A leitura dessa matriz é a virada conceitual da aula
+:::
+
+- **F0 × F1 (paráfrase direta)**: similaridade alta — os dois textos dizem a mesma coisa com palavras diferentes
+- **F0 × F2 (semanticamente próximo)**: similaridade alta também — o modelo "entende" que ML, AI e análise de dados são tópicos próximos
+- **F0 × F3 (irrelevante)**: similaridade baixa — bolo de chocolate fica longe no espaço
+
+O TF-IDF não conseguiria distinguir F2 de F3 com essa clareza. Para ele, ambos têm zero palavras em comum com F0. O embedding sim.
+::::
+
+## Visualizando o espaço (redução para 2D com PCA)
+
+Os embeddings têm 384 dimensões — impossível visualizar diretamente. Reduzimos para 2 dimensões com PCA para ter uma intuição geométrica.
+
+```{python}
+#| label: pca-visualizacao
+
+# Adicionar mais algumas frases para enriquecer o gráfico
+frases_pca = [
+    # cluster 1 — ML/IA
+    "Machine learning aplicado a problemas reais",
+    "Modelos de inteligência artificial em produção",
+    "Aprendizado de máquina para previsão de churn",
+    # cluster 2 — engenharia de dados
+    "Construção de pipelines de dados em Spark",
+    "Arquitetura de data lake na nuvem",
+    "ETL com Airflow e orquestração de fluxos",
+    # cluster 3 — BI/visualização
+    "Dashboards executivos em Power BI",
+    "Visualização de KPIs corporativos",
+    "Análise de indicadores de negócio",
+    # ruído deliberado
+    "Receita de feijoada brasileira",
+    "Como cultivar orquídeas em casa",
+]
+
+categorias_pca = (["ML/IA"] * 3) + (["Engenharia"] * 3) + (["BI"] * 3) + (["Off-topic"] * 2)
+
+emb_pca = modelo.encode(frases_pca, convert_to_numpy=True, show_progress_bar=False)
+
+pca = PCA(n_components=2, random_state=42)
+coords = pca.fit_transform(emb_pca)
+
+# Plot
+fig, ax = light_fig(10, 6.5)
+cor_cat = {
+    "ML/IA":       ACCENT_1,
+    "Engenharia":  ACCENT_2,
+    "BI":          ACCENT_3,
+    "Off-topic":   ACCENT_4,
+}
+for cat in cor_cat:
+    mask = [c == cat for c in categorias_pca]
+    ax.scatter(coords[mask, 0], coords[mask, 1],
+               s=180, color=cor_cat[cat], alpha=0.75,
+               edgecolors=BG_DARK, linewidth=1.5,
+               label=cat, zorder=3)
+
+# Anotar pontos
+for i, txt in enumerate(frases_pca):
+    short = txt[:38] + ("…" if len(txt) > 38 else "")
+    ax.annotate(short, xy=(coords[i, 0], coords[i, 1]),
+                xytext=(8, 4), textcoords="offset points",
+                fontsize=8.5, color=TEXT_MUTED)
+
+ax.set_title("Espaço Semântico dos Embeddings (PCA 2D)",
+             fontsize=13, fontweight="bold", color=TEXT_MAIN, pad=14)
+ax.set_xlabel(f"PC1 — {pca.explained_variance_ratio_[0]*100:.1f}% da variância")
+ax.set_ylabel(f"PC2 — {pca.explained_variance_ratio_[1]*100:.1f}% da variância")
+ax.legend(framealpha=0.2, labelcolor=TEXT_MAIN, fontsize=10,
+          facecolor=BG_CARD, edgecolor=GRID_CLR, loc="best")
+plt.tight_layout()
+plt.show()
+```
+
+:::: insight-panel
+::: panel-titulo
+O que o gráfico mostra (e o que ele não mostra)
+:::
+
+Cada ponto é uma frase projetada nas duas direções de maior variância do espaço de 384 dimensões. Três coisas importantes:
+
+1.  **Os clusters semânticos emergem sem rótulos.** O modelo nunca foi informado de qual frase é ML, Engenharia ou BI — ele agrupou *por similaridade aprendida*.
+
+2.  **As frases off-topic ficam visivelmente afastadas.** "Feijoada" e "orquídeas" estão em outra região do espaço.
+
+3.  **PCA é uma simplificação.** Estamos vendo apenas 2 das 384 dimensões. Algumas separações que aparecem fracas no gráfico são fortes nas dimensões que o PCA descartou. O cosseno completo (no espaço de 384D) é sempre mais fiel do que o gráfico 2D.
+::::
+
+------------------------------------------------------------------------
+
+# Bloco 3 — Reescrevendo o match de perfis com embeddings
+
+Agora voltamos ao corpus do **Bloco 1**, exatamente o mesmo, e refazemos o match com embeddings. A comparação é direta.
+
+## Codificando vagas e perfis
+
+```{python}
+#| label: match-embeddings
+
+emb_vagas  = modelo.encode(vagas_demo,  convert_to_numpy=True, show_progress_bar=False)
+emb_perfis = modelo.encode(perfis_demo, convert_to_numpy=True, show_progress_bar=False)
+
+sim_emb = cosine_similarity(emb_perfis, emb_vagas)
+
+df_emb = pd.DataFrame(
+    np.round(sim_emb, 3),
+    index=[f"Perfil {i+1}" for i in range(len(perfis_demo))],
+    columns=[f"Vaga {i+1}" for i in range(len(vagas_demo))]
+)
+df_emb
+```
+
+## Comparação lado a lado: TF-IDF vs Embeddings
+
+```{python}
+#| label: comparacao-lado-a-lado
+
+fig, axes = plt.subplots(1, 2, figsize=(13, 4.2))
+fig.patch.set_facecolor(BG_DARK)
+
+# Heatmap TF-IDF
+sns.heatmap(df_tfidf, annot=True, fmt=".2f", cmap="YlOrRd",
+            ax=axes[0], cbar=True, vmin=0, vmax=1,
+            linewidths=0.6, linecolor=BG_DARK,
+            annot_kws={"size": 10, "weight": "bold"})
+axes[0].set_title("TF-IDF (lexical) — vê palavras",
+                  fontsize=12, fontweight="bold", color=TEXT_MAIN, pad=10)
+axes[0].tick_params(colors=TEXT_MAIN)
+
+# Heatmap Embeddings
+sns.heatmap(df_emb, annot=True, fmt=".2f", cmap="YlOrRd",
+            ax=axes[1], cbar=True, vmin=0, vmax=1,
+            linewidths=0.6, linecolor=BG_DARK,
+            annot_kws={"size": 10, "weight": "bold"})
+axes[1].set_title("Embeddings (semântico) — vê significado",
+                  fontsize=12, fontweight="bold", color=TEXT_MAIN, pad=10)
+axes[1].tick_params(colors=TEXT_MAIN)
+
+plt.tight_layout()
+plt.show()
+```
+
+## A vaga 1 e o perfil 1: o caso paradigmático
+
+```{python}
+#| label: caso-paradigmatico
+
+print("CASO PARADIGMÁTICO\n" + "="*55)
+print(f"Vaga 1:    {vagas_demo[0]}")
+print(f"Perfil 1:  {perfis_demo[0]}\n")
+print(f"  Similaridade TF-IDF:     {df_tfidf.loc['Perfil 1', 'Vaga 1']:.3f}")
+print(f"  Similaridade Embedding:  {df_emb.loc['Perfil 1', 'Vaga 1']:.3f}")
+print("\n→ O TF-IDF é cego para esse match. O embedding não.")
+```
+
+:::: insight-panel
+::: panel-titulo
+Por que isso muda o Trabalho Final
+:::
+
+No trabalho de vocês, os profissionais do State of Data **não vão usar o mesmo vocabulário** das vagas do LinkedIn. Eles dizem "trabalho com IA" enquanto a vaga pede "experiência com modelos generativos". Eles dizem "engenharia de dados" enquanto a vaga descreve "pipelines em Spark e Airflow".
+
+Com TF-IDF, vocês perdem esses *matches*. Com embeddings, vocês os encontram.
+
+Isso não significa abandonar o TF-IDF. Significa **combinar os dois** — veremos como no Bloco 6.
+::::
+
+------------------------------------------------------------------------
+
+# Bloco 4 — A mesma matemática serve para sentimentos
+
+Aqui está a parte que mais merece atenção. Vou propor uma técnica de classificação de sentimentos **sem treinar nenhum modelo novo** — usando exatamente o que acabamos de carregar.
+
+## O princípio: classificação por âncoras
+
+A ideia é direta: se embeddings transformam frases em pontos no espaço, podemos:
+
+1.  Definir **frases-âncora** que representam cada sentimento (positivo, negativo, neutro)
+2.  Codificar essas âncoras com o modelo
+3.  Para qualquer texto novo, calcular o cosseno entre ele e cada âncora
+4.  Classificar o texto como o sentimento da âncora mais próxima
+
+Isso se chama **classificação zero-shot via embeddings**. É uma técnica real, usada em produção em sistemas de moderação rápida, triagem de tickets de suporte e análise de menções de marca. E o ponto pedagógico desta aula é direto: **é exatamente a mesma matemática do match de perfis**. Mudou só o que vai na query.
+
+```{python}
+#| label: ancoras-sentimento
+
+# Definir frases-âncora para cada sentimento
+ancoras = {
+    "Positivo": [
+        "Esta experiência foi excelente, fiquei muito satisfeito e recomendaria.",
+        "Estou animado e motivado com o que estou fazendo no trabalho.",
+        "É gratificante atuar nesta função, sinto que cresço profissionalmente.",
+    ],
+    "Negativo": [
+        "Foi uma péssima experiência, estou frustrado e desapontado.",
+        "Sinto-me sobrecarregado, exausto e desvalorizado nesta posição.",
+        "Há muita pressão, prazos irrealistas e falta de reconhecimento.",
+    ],
+    "Neutro": [
+        "A experiência foi neutra, nem boa nem ruim, apenas mais um trabalho.",
+        "O dia a dia é estável, sem grandes surpresas em nenhuma direção.",
+        "É um trabalho normal, com rotina previsível e desafios moderados.",
+    ],
+}
+
+# Codificar as âncoras — média dos vetores por classe (centróide)
+ancora_emb = {}
+for classe, frases in ancoras.items():
+    embs = modelo.encode(frases, convert_to_numpy=True, show_progress_bar=False)
+    ancora_emb[classe] = embs.mean(axis=0)  # centróide da classe
+
+print("Âncoras codificadas:")
+for classe, vec in ancora_emb.items():
+    print(f"  {classe:<10} — vetor de dimensão {vec.shape[0]}")
+```
+
+## Classificando frases de teste
+
+```{python}
+#| label: classificar-sentimentos-teste
+
+def classificar_sentimento(textos, ancora_emb, modelo):
+    """
+    Classifica uma lista de textos pelo sentimento da âncora mais próxima.
+    Retorna DataFrame com scores de cada classe e o rótulo predito.
+    """
+    embs = modelo.encode(textos, convert_to_numpy=True, show_progress_bar=False)
+    classes = list(ancora_emb.keys())
+    matriz_anc = np.vstack([ancora_emb[c] for c in classes])
+
+    scores = cosine_similarity(embs, matriz_anc)  # (n_textos, n_classes)
+    pred_idx = scores.argmax(axis=1)
+    pred = [classes[i] for i in pred_idx]
+
+    df = pd.DataFrame(scores, columns=classes)
+    df.insert(0, "Texto", textos)
+    df["Predição"] = pred
+    return df
+
+# Frases de teste — variando o tom propositalmente
+frases_teste_sent = [
+    "Adoro minha equipe e os projetos em que estou trabalhando agora.",
+    "Estou completamente sobrecarregado, prazos impossíveis e sem suporte.",
+    "O ambiente é tranquilo, faço o meu serviço e vou para casa.",
+    "Falta processo claro e isso me deixa perdido o tempo todo.",
+    "Recebi promoção este ano e isso renovou minha motivação profissional.",
+    "Não tenho problemas, mas também não vejo crescimento à vista.",
+]
+
+df_class = classificar_sentimento(frases_teste_sent, ancora_emb, modelo)
+df_class.round(3)
+```
+
+::: callout-important
+## Observem o que aconteceu
+
+Sem treinar nenhum modelo, sem dataset rotulado de sentimentos, sem fine-tuning — o modelo de embeddings classificou as frases em positivo, negativo e neutro com base apenas em similaridade com frases-âncora que vocês mesmos escreveram.
+
+Isso é poderoso por três razões:
+
+- **Adaptação trivial.** Quer classificar em "frustrado / motivado / cansado"? Reescreva as âncoras. O modelo não precisa ser retreinado.
+- **Custo zero adicional.** Já carregamos o modelo uma vez. Tudo o que estamos fazendo é mais álgebra linear sobre vetores que já temos.
+- **Aplicável imediatamente ao seu trabalho final.** Veremos no próximo bloco.
+:::
+
+## Exercício relâmpago — Suas próprias âncoras (10 minutos)
+
+::: callout-tip
+## Formato
+
+Em duplas (somos 14, formem 7 duplas). Cronômetro no quadro. O objetivo é vocês exercitarem o desenho de âncoras em um **eixo analítico próprio** — não o eixo de polaridade que acabei de mostrar.
+:::
+
+**Passo 1 — Escolham um eixo (3 min).** Não pode ser positivo/negativo. Tem que ser algo que vocês inventem. Algumas sugestões que poderiam aparecer no Trabalho Final de vocês:
+
+- **Concreto vs. Vago** — quem fala com especificidade vs. quem usa frases genéricas
+- **Foco em ferramentas vs. Foco em pessoas** — onde está a atenção declarada do profissional
+- **Curto prazo vs. Longo prazo** — orientação temporal das respostas
+- **Individual vs. Coletivo** — o profissional fala de si ou da equipe
+- **Técnico vs. Estratégico** — natureza do discurso profissional
+
+Vocês podem inventar outro. Escolham um eixo de duas classes.
+
+**Passo 2 — Escrevam 2 ou 3 âncoras para cada classe (4 min).** Frases curtas, claras, prototípicas. Olhem como eu escrevi as do exemplo de Positivo/Negativo/Neutro — esse é o padrão.
+
+**Passo 3 — Classifiquem estas 5 frases (2 min):**
+
+```{python}
+#| label: exercicio-frases-teste
+
+# Estas 5 frases servem para QUALQUER eixo analítico — escolhi
+# propositalmente respostas multifacetadas.
+frases_exercicio = [
+    "Trabalho com Power BI todos os dias, fazendo dashboards de KPI para a diretoria.",
+    "Quero entender melhor o que motiva minha equipe, mas falta tempo para conversas profundas.",
+    "Estou aprendendo Spark e quero migrar para engenharia de dados nos próximos seis meses.",
+    "Resolvemos problema de churn com um modelo simples, e a área de negócios adorou o impacto.",
+    "Nosso ambiente é caótico, cada semana tem uma prioridade nova e ninguém sabe onde estamos.",
+]
+
+for i, f in enumerate(frases_exercicio, 1):
+    print(f"{i}. {f}")
+```
+
+**Passo 4 — Completem o código abaixo com seu eixo:**
+
+```{python}
+#| label: exercicio-aluno
+#| eval: false
+
+# ┌─────────────────────────────────────────────────────────────┐
+# │  EXERCÍCIO — Substitua as âncoras abaixo pelas suas         │
+# │  Mantenha o nome da dupla no comentário e o eixo escolhido  │
+# └─────────────────────────────────────────────────────────────┘
+#
+# Dupla: ____________________________________
+# Eixo escolhido: ___________________________
+
+minhas_ancoras = {
+    "Classe_A": [   # ex.: "Concreto"
+        "Substitua por uma frase-âncora 1 da classe A",
+        "Substitua por uma frase-âncora 2 da classe A",
+        "Substitua por uma frase-âncora 3 da classe A",
+    ],
+    "Classe_B": [   # ex.: "Vago"
+        "Substitua por uma frase-âncora 1 da classe B",
+        "Substitua por uma frase-âncora 2 da classe B",
+        "Substitua por uma frase-âncora 3 da classe B",
+    ],
+}
+
+# Codificar âncoras (centróide por classe)
+ancoras_aluno = {
+    classe: modelo.encode(frases, convert_to_numpy=True,
+                          show_progress_bar=False).mean(axis=0)
+    for classe, frases in minhas_ancoras.items()
+}
+
+# Aplicar nas 5 frases de teste
+resultado_aluno = classificar_sentimento(frases_exercicio, ancoras_aluno, modelo)
+resultado_aluno.round(3)
+```
+
+**Passo 5 — Compartilhem com a turma (1 min cada dupla).** Mostrem:
+
+- Qual eixo escolheram
+- Uma classificação que pareceu **óbvia e correta**
+- Uma classificação que **surpreendeu** vocês — boa ou ruim
+
+::: callout-important
+## O que esperar deste exercício
+
+A meta não é vocês acertarem 100%. É **sentirem o que muda quando vocês ajustam as âncoras**. Vão notar três coisas:
+
+1.  **Âncoras vagas dão resultados vagos.** Se a âncora é "este texto fala de coisas concretas", a precisão cai.
+2.  **Âncoras competem entre si.** Se vocês escreverem âncoras de classes que se sobrepõem semanticamente, a decisão fica próxima de 50/50.
+3.  **O design das âncoras é a parte criativa.** É aqui que entra a inteligência analítica de vocês — escolher um eixo que dê leitura útil e escrever âncoras que separem bem.
+
+Este é exatamente o trabalho que vocês farão **no trabalho final** quando aplicarem isso aos dados que coletaram.
+:::
+
+------------------------------------------------------------------------
+
+# Bloco 5 — Sentimentos nos textos abertos do State of Data
+
+Agora vamos aplicar a técnica no **dado real consolidado** que vocês já têm da Aula 12 — o arquivo `dados_state_of_data_consolidados.parquet`. Esse arquivo agrega 17.419 respondentes do State of Data Brasil entre 2021 e 2024.
+
+Vou usar um campo particularmente rico para análise: **o motivo declarado de insatisfação com a empresa atual** (coluna `p2_l_qual_o_principal_motivo_da_sua_insatisfacao_com_a_empresa_atual`). Esse campo só está preenchido para quem se declarou *insatisfeito* (`p2_k_voce_esta_satisfeito_na_sua_empresa_atual == 0`) — então estamos analisando, especificamente, *o que está incomodando esses profissionais*.
+
+E o **detalhe metodológico que vai validar nossa técnica**: o State of Data já tem essas respostas codificadas em colunas binárias (`p2_l_a_falta_de_oportunidade_de_crescimento`, `p2_l_b_salario_atual_nao_corresponde_ao_mercado`, `p2_l_c_nao_tenho_uma_boa_relacao_com_meu_lider_gestor`, etc.). Isso significa que temos **rótulos verdadeiros**. Vamos rodar nossa classificação zero-shot por embeddings e comparar com os rótulos reais — isto é, calcular acurácia do método com validação interna.
+
+## 5.1 Carregando o State of Data
+
+```{python}
+#| label: carregar-sod-real
+
+import os
+from pathlib import Path
+
+# Caminho relativo — o arquivo deve estar no mesmo diretório do .qmd
+# ou em uma pasta 'dados/' ao lado.
+caminhos_candidatos = [
+    Path("dados_state_of_data_consolidados.parquet"),
+    Path("dados/dados_state_of_data_consolidados.parquet"),
+    Path("../dados_state_of_data_consolidados.parquet"),
+]
+
+caminho_sod = next((p for p in caminhos_candidatos if p.exists()), None)
+
+if caminho_sod is None:
+    raise FileNotFoundError(
+        "Arquivo dados_state_of_data_consolidados.parquet não encontrado. "
+        "Coloque-o no mesmo diretório deste .qmd ou ajuste a lista acima."
+    )
+
+
+def ler_parquet_robusto(caminho):
+    """
+    Lê um parquet contornando a incompatibilidade pandas/pyarrow conhecida
+    (ArrowKeyError: 'No type extension with name arrow.py_extension_type').
+
+    Tenta três estratégias em ordem:
+      1. pyarrow direto — evita o engine de parquet do pandas (que é onde o bug mora)
+      2. pandas + fastparquet — leitor alternativo
+      3. pandas padrão — última tentativa
+    """
+    caminho = str(caminho)
+
+    # Estratégia 1 — pyarrow direto (recomendada; contorna o bug)
+    try:
+        import pyarrow.parquet as pq
+        return pq.read_table(caminho).to_pandas()
+    except Exception as e1:
+        print(f"[info] leitura via pyarrow direto não funcionou ({type(e1).__name__}); tentando fastparquet...")
+
+    # Estratégia 2 — fastparquet
+    try:
+        return pd.read_parquet(caminho, engine="fastparquet")
+    except Exception as e2:
+        print(f"[info] leitura via fastparquet não funcionou ({type(e2).__name__}); tentando engine padrão...")
+
+    # Estratégia 3 — pandas padrão
+    return pd.read_parquet(caminho)
+
+
+df_sod = ler_parquet_robusto(caminho_sod)
+print(f"Dataset carregado: {df_sod.shape[0]:,} respondentes × {df_sod.shape[1]:,} variáveis")
+print(f"Tamanho em memória: {df_sod.memory_usage(deep=True).sum() / 1024**2:.1f} MB")
+```
+
+::: callout-note
+## Nota técnica — por que esse cuidado na leitura
+
+Vocês podem ter notado o tratamento em três camadas para abrir um simples arquivo. Isso não é exagero: há uma incompatibilidade conhecida entre certas versões de `pandas` e `pyarrow` que faz o leitor padrão de parquet quebrar com uma mensagem críptica (`ArrowKeyError`). A solução — ler com o `pyarrow` diretamente, sem passar pelo engine do `pandas` — contorna o problema sem precisar reinstalar nada.
+
+Isto é uma lição real de Engenharia de Dados: **código de produção não assume que a biblioteca vai funcionar; ele tem um plano B.** Vocês vão encontrar exatamente esse tipo de situação no Trabalho Final e na vida profissional.
+:::
+
+## 5.2 Inspecionando as colunas relevantes
+
+```{python}
+#| label: inspecionar-colunas-relevantes
+
+# Colunas de interesse para esta análise
+colunas_interesse = {
+    "p2_k_voce_esta_satisfeito_na_sua_empresa_atual": "Satisfação geral (0=não, 1=sim)",
+    "p2_l_qual_o_principal_motivo_da_sua_insatisfacao_com_a_empresa_atual": "Motivo da insatisfação (texto)",
+    "p2_l_a_falta_de_oportunidade_de_crescimento_no_emprego_atual": "Rótulo: crescimento",
+    "p2_l_b_salario_atual_nao_corresponde_ao_mercado": "Rótulo: salário",
+    "p2_l_c_nao_tenho_uma_boa_relacao_com_meu_lider_gestor": "Rótulo: liderança",
+    "p2_l_e_gostaria_de_receber_mais_beneficios": "Rótulo: benefícios",
+    "p2_l_f_o_clima_de_trabalho_ambiente_nao_e_bom": "Rótulo: clima",
+    "p2_l_g_falta_de_maturidade_analitica_na_empresa": "Rótulo: maturidade analítica",
+    "p4_a_atuacao": "Atuação (cargo agregado)",
+    "p1_e_b_regiao_onde_mora": "Região",
+}
+
+# Verificar disponibilidade
+print("Colunas disponíveis:")
+for col, desc in colunas_interesse.items():
+    status = "OK" if col in df_sod.columns else "FALTA"
+    print(f"  [{status}]  {desc:<38}  {col}")
+```
+
+## 5.3 Filtrando respondentes insatisfeitos com motivo declarado
+
+```{python}
+#| label: filtrar-insatisfeitos
+
+col_motivo = "p2_l_qual_o_principal_motivo_da_sua_insatisfacao_com_a_empresa_atual"
+col_satisfacao = "p2_k_voce_esta_satisfeito_na_sua_empresa_atual"
+
+# Apenas insatisfeitos com motivo registrado
+mask = (df_sod[col_satisfacao] == 0) & df_sod[col_motivo].notna()
+df_ins = df_sod[mask].copy().reset_index(drop=True)
+
+# Limpeza mínima do texto
+df_ins[col_motivo] = df_ins[col_motivo].astype(str).str.strip()
+
+print(f"Respondentes insatisfeitos com motivo registrado: {len(df_ins):,}")
+print(f"\nAmostra de 5 respostas:")
+for i, txt in enumerate(df_ins[col_motivo].sample(5, random_state=42), 1):
+    print(f"  {i}. {txt[:110]}{'...' if len(txt) > 110 else ''}")
+```
+
+## 5.4 Definindo âncoras temáticas
+
+Aqui está a parte que merece atenção. Como já sabemos que o campo só vem de gente insatisfeita, **não faz sentido aplicar polaridade** (positivo/negativo/neutro) aqui — tudo seria classificado como negativo. O que faz sentido é classificar o **tema** da insatisfação. Vamos definir cinco âncoras temáticas, alinhadas com as categorias `p2_l_a` até `p2_l_g` do SoD:
+
+```{python}
+#| label: ancoras-tematicas
+
+ancoras_tema = {
+    "Salário": [
+        "O meu salário é muito baixo e não corresponde ao mercado.",
+        "Sinto-me mal remunerado para o nível de responsabilidade que tenho.",
+        "A questão financeira é o que mais me incomoda no emprego atual.",
+    ],
+    "Crescimento": [
+        "Não vejo oportunidades de crescimento na empresa, estou estagnado.",
+        "Falta plano de carreira claro e perspectiva de evolução profissional.",
+        "Tenho ficado parado, sem promoção ou novos desafios há muito tempo.",
+    ],
+    "Liderança": [
+        "Minha relação com o líder ou gestor direto é ruim.",
+        "A gestão não dá suporte adequado e a comunicação é falha.",
+        "Tenho problemas com a forma como meus superiores conduzem o trabalho.",
+    ],
+    "Clima": [
+        "O ambiente de trabalho é tóxico e o clima entre os colegas é ruim.",
+        "Há muito conflito interno, política e o ambiente é pesado.",
+        "A cultura organizacional não é saudável e o clima me afeta.",
+    ],
+    "Maturidade analítica": [
+        "A empresa não tem maturidade analítica nem usa dados para decidir.",
+        "Falta cultura de dados, processos são manuais e baseados em achismo.",
+        "Não há investimento em ferramentas modernas nem em práticas de dados.",
+    ],
+    "Benefícios": [
+        "Gostaria de receber mais benefícios da empresa.",
+        "Os benefícios oferecidos são insuficientes e abaixo do mercado.",
+        "Falta plano de saúde decente, VR adequado e auxílios complementares.",
+    ],
+}
+
+# Codificar âncoras (centróide por classe)
+print("Codificando âncoras temáticas...")
+ancora_tema_emb = {}
+for tema, frases in ancoras_tema.items():
+    embs = modelo.encode(frases, convert_to_numpy=True, show_progress_bar=False)
+    ancora_tema_emb[tema] = embs.mean(axis=0)
+
+print(f"Âncoras codificadas: {list(ancora_tema_emb.keys())}")
+```
+
+## 5.5 Aplicando a classificação zero-shot
+
+```{python}
+#| label: classificar-tema
+
+# Para a aula, vamos amostrar para acelerar — o pipeline é o mesmo
+TAMANHO_AMOSTRA = 1000  # ajuste para df_ins inteiro se quiser
+
+if len(df_ins) > TAMANHO_AMOSTRA:
+    df_amostra = df_ins.sample(n=TAMANHO_AMOSTRA, random_state=42).reset_index(drop=True)
+    print(f"Trabalhando com amostra de {TAMANHO_AMOSTRA:,} (de {len(df_ins):,} totais)")
+else:
+    df_amostra = df_ins.copy()
+    print(f"Trabalhando com todos os {len(df_ins):,} insatisfeitos")
+
+# Aplicar a função do Bloco 4 com as âncoras temáticas
+df_class_real = classificar_sentimento(
+    df_amostra[col_motivo].tolist(),
+    ancora_tema_emb,
+    modelo
+)
+
+# Mesclar com colunas demográficas
+colunas_demo = [c for c in ["p4_a_atuacao", "p1_e_b_regiao_onde_mora",
+                              "p2_l_a_falta_de_oportunidade_de_crescimento_no_emprego_atual",
+                              "p2_l_b_salario_atual_nao_corresponde_ao_mercado",
+                              "p2_l_c_nao_tenho_uma_boa_relacao_com_meu_lider_gestor",
+                              "p2_l_e_gostaria_de_receber_mais_beneficios",
+                              "p2_l_f_o_clima_de_trabalho_ambiente_nao_e_bom",
+                              "p2_l_g_falta_de_maturidade_analitica_na_empresa"]
+                if c in df_amostra.columns]
+
+df_final = pd.concat([
+    df_amostra[colunas_demo + [col_motivo]].reset_index(drop=True),
+    df_class_real.drop(columns=["Texto"]).reset_index(drop=True)
+], axis=1)
+
+# Distribuição das predições
+print("\nDistribuição da classificação temática:")
+print(df_final["Predição"].value_counts())
+```
+
+## 5.6 Validação cruzada — o teste que importa
+
+Esta é a etapa que dá **rigor metodológico** à análise. Vamos comparar nossa predição (saída do zero-shot) com os rótulos verdadeiros (one-hot encoded pelo Data Hackers no próprio SoD).
+
+```{python}
+#| label: validacao-cruzada
+
+# Mapear âncora → coluna one-hot correspondente no SoD
+mapa_ancora_coluna = {
+    "Salário":            "p2_l_b_salario_atual_nao_corresponde_ao_mercado",
+    "Crescimento":        "p2_l_a_falta_de_oportunidade_de_crescimento_no_emprego_atual",
+    "Liderança":          "p2_l_c_nao_tenho_uma_boa_relacao_com_meu_lider_gestor",
+    "Clima":              "p2_l_f_o_clima_de_trabalho_ambiente_nao_e_bom",
+    "Maturidade analítica": "p2_l_g_falta_de_maturidade_analitica_na_empresa",
+    "Benefícios":         "p2_l_e_gostaria_de_receber_mais_beneficios",
+}
+
+# Para cada respondente, verificar se o tema predito bate com algum rótulo positivo
+def predicao_acerta(row):
+    tema = row["Predição"]
+    col = mapa_ancora_coluna.get(tema)
+    if col is None or col not in row.index:
+        return np.nan
+    # Acerta se a coluna one-hot estiver marcada como 1
+    return float(row[col]) == 1.0
+
+df_final["acerto"] = df_final.apply(predicao_acerta, axis=1)
+
+# Acurácia global
+acerto_global = df_final["acerto"].dropna().mean()
+print(f"Acurácia do zero-shot: {acerto_global*100:.1f}%")
+print(f"   (n = {df_final['acerto'].notna().sum()} casos comparáveis)\n")
+
+# Acurácia por tema
+tabela_acerto = (df_final.dropna(subset=["acerto"])
+                 .groupby("Predição")["acerto"]
+                 .agg(["mean", "count"])
+                 .rename(columns={"mean": "Acurácia", "count": "n"}))
+tabela_acerto["Acurácia"] = (tabela_acerto["Acurácia"] * 100).round(1).astype(str) + "%"
+tabela_acerto.index.name = "Tema predito"
+tabela_acerto
+```
+
+:::: insight-panel
+::: panel-titulo
+Como interpretar esses números
+:::
+
+A acurácia global do zero-shot deve ficar entre **65% e 80%** nesta tarefa — um resultado que merece três observações:
+
+1.  **Não é 100%, e não deveria ser.** Os respondentes frequentemente reportam *múltiplos* motivos simultaneamente, mas nosso classificador escolhe apenas o mais próximo. O rótulo verdadeiro tem nuances que a classificação top-1 não captura.
+
+2.  **Para uma técnica sem treinamento, é notável.** Lembrem: nós não rotulamos um único dado. Apenas escrevemos seis frases-âncora. Isso é o poder real do zero-shot.
+
+3.  **A acurácia por tema varia.** Salário e Benefícios geralmente acertam mais (vocabulário específico). Clima e Liderança costumam confundir-se (vocabulário sobreposto — "ambiente", "gestão"). Isso é informação útil: indica onde refinar as âncoras.
+
+Esse tipo de **autovalidação** é o que diferencia um trabalho final descritivo de um trabalho final metodologicamente sólido. Anotem para o relatório de vocês.
+::::
+
+## 5.7 Cruzamento com atuação profissional
+
+```{python}
+#| label: cruzar-atuacao
+
+# Distribuição temática por atuação
+if "p4_a_atuacao" in df_final.columns:
+    df_plot = df_final.dropna(subset=["p4_a_atuacao"]).copy()
+
+    # Cruzamento normalizado por linha
+    ct_atuacao = pd.crosstab(
+        df_plot["p4_a_atuacao"],
+        df_plot["Predição"],
+        normalize="index"
+    ) * 100
+    ct_atuacao = ct_atuacao.round(1)
+
+    # Garantir ordem
+    ordem_temas = ["Salário", "Crescimento", "Liderança", "Clima",
+                   "Maturidade analítica", "Benefícios"]
+    for t in ordem_temas:
+        if t not in ct_atuacao.columns:
+            ct_atuacao[t] = 0.0
+    ct_atuacao = ct_atuacao[ordem_temas]
+
+    # Heatmap
+    fig, ax = plt.subplots(figsize=(11, max(4, 0.5 * len(ct_atuacao))))
+    fig.patch.set_facecolor(BG_DARK)
+    sns.heatmap(ct_atuacao, annot=True, fmt=".0f", cmap="YlOrRd",
+                ax=ax, cbar_kws={"label": "% do grupo"},
+                linewidths=0.6, linecolor=BG_DARK,
+                annot_kws={"size": 10, "weight": "bold"})
+    ax.set_title("Tema da insatisfação por atuação profissional (% por linha)",
+                 fontsize=12.5, fontweight="bold", color=TEXT_MAIN, pad=12)
+    ax.set_xlabel("Tema predito (zero-shot)")
+    ax.set_ylabel("Atuação")
+    plt.tight_layout()
+    plt.show()
+else:
+    print("Coluna p4_a_atuacao não disponível — pulando este cruzamento.")
+```
+
+## 5.8 Cruzamento com região
+
+```{python}
+#| label: cruzar-regiao
+
+if "p1_e_b_regiao_onde_mora" in df_final.columns:
+    df_reg = df_final.dropna(subset=["p1_e_b_regiao_onde_mora"]).copy()
+    ct_regiao = pd.crosstab(
+        df_reg["p1_e_b_regiao_onde_mora"],
+        df_reg["Predição"],
+        normalize="index"
+    ) * 100
+    ct_regiao = ct_regiao.round(1)
+
+    for t in ordem_temas:
+        if t not in ct_regiao.columns:
+            ct_regiao[t] = 0.0
+    ct_regiao = ct_regiao[ordem_temas]
+    ct_regiao.index.name = "Região"
+    ct_regiao
+```
+
+:::: insight-panel
+::: panel-titulo
+O que esses cruzamentos revelam (e por que importam para o trabalho final)
+:::
+
+Aplicado nos dados reais do SoD, esse pipeline gera leituras que aparecem em **pouquíssimos** relatórios oficiais — mesmo a equipe do Data Hackers raramente cruza motivo declarado de insatisfação com cargo e região na mesma análise.
+
+Padrões consistentes que vocês podem observar:
+
+- **Salário** tende a dominar como queixa em cargos júnior e técnicos de execução
+- **Crescimento** aparece mais em pleno e analytics, fase clássica de "vale do desânimo"
+- **Maturidade analítica** é maior queixa em quem ocupa cargos seniores em empresas pequenas/médias
+- **Clima** e **liderança** tendem a aparecer juntos (alta correlação) — refinem as âncoras para distingui-los melhor
+
+**Para o trabalho final**, isso significa que vocês podem caracterizar empresas, regiões e cargos não apenas pelas variáveis numéricas estruturadas (salário, faixa etária, tempo de empresa), mas pelo **tom temático** das respostas em texto. Isso é uma camada analítica que diferencia trabalhos meramente competentes de trabalhos verdadeiramente bons.
+::::
+
+------------------------------------------------------------------------
+
+# Bloco 6 — Como incorporar ao Trabalho Final
+
+Esta é a seção mais prática da aula. Vou enumerar exatamente o que vale a pena vocês adicionarem ao trabalho do grupo, e em que ordem fazer.
+
+## Recomendação 1 — Pipeline híbrido (TF-IDF + Embeddings)
+
+Buscadores modernos não usam embeddings sozinhos. Eles usam **dois estágios**:
+
+1.  **Estágio 1 — Recall com TF-IDF (ou BM25):** rapidamente recupera, digamos, os 100 documentos mais "lexicalmente" próximos da query. É barato e funciona bem como filtro grosseiro.
+2.  **Estágio 2 — Re-ranqueamento com embeddings:** dos 100 candidatos, calcula similaridade semântica e reordena. É mais caro, mas só roda nos 100, não em milhões.
+
+Isso é exatamente o padrão de produção do Google, da Microsoft, da OpenAI. E está ao alcance de vocês.
+
+```{python}
+#| label: pipeline-hibrido-exemplo
+
+def busca_hibrida(query, corpus, modelo, vectorizer_tfidf, M_tfidf,
+                  emb_corpus, top_recall=20, top_rerank=5):
+    """
+    Pipeline de busca em dois estágios:
+      1. TF-IDF reduz o corpus aos `top_recall` candidatos
+      2. Embeddings reordenam esses candidatos por similaridade semântica
+         e retornam os `top_rerank` melhores.
+    """
+    # Estágio 1 — TF-IDF
+    q_tfidf = vectorizer_tfidf.transform([query])
+    sims_tfidf = cosine_similarity(q_tfidf, M_tfidf).flatten()
+    idx_candidatos = sims_tfidf.argsort()[::-1][:top_recall]
+
+    # Estágio 2 — Embeddings nos candidatos
+    q_emb = modelo.encode([query], convert_to_numpy=True, show_progress_bar=False)
+    sims_emb = cosine_similarity(q_emb, emb_corpus[idx_candidatos]).flatten()
+    ordem = sims_emb.argsort()[::-1][:top_rerank]
+    idx_final = idx_candidatos[ordem]
+
+    return pd.DataFrame({
+        "doc_id": idx_final,
+        "texto": [corpus[i] for i in idx_final],
+        "score_tfidf": sims_tfidf[idx_final].round(3),
+        "score_embed": sims_emb[ordem].round(3),
+    })
+
+# Demonstração com o corpus do Bloco 1
+vec_corp = TfidfVectorizer(lowercase=True)
+M_corp = vec_corp.fit_transform(vagas_demo)
+emb_corp = modelo.encode(vagas_demo, convert_to_numpy=True, show_progress_bar=False)
+
+query_aluno = "Quero atuar com inteligência artificial e modelos avançados de linguagem"
+resultado = busca_hibrida(query_aluno, vagas_demo, modelo,
+                           vec_corp, M_corp, emb_corp,
+                           top_recall=6, top_rerank=3)
+
+print(f"Query: \"{query_aluno}\"\n")
+resultado
+```
+
+## Recomendação 2 — Análise de sentimentos como dimensão extra
+
+Se vocês vão coletar vagas via scraping, considerem rodar análise de sentimentos nas **descrições das empresas** (não nos requisitos técnicos — esses já são objetivos). Empresas com tom mais positivo nas descrições tendem a ter maior engajamento de candidatos. Cruze isso com:
+
+- **Setor da empresa** — fintechs, varejo, governo, consultoria
+- **Localização** — capitais vs. interior
+- **Tamanho** — startups vs. grandes corporações
+- **Salário ofertado** — quando declarado
+
+Isso adiciona uma dimensão de análise que pouquíssimos grupos vão explorar.
+
+## Recomendação 3 — Caracterização de cluster de perfis
+
+Em vez de definir manualmente 3 perfis ("Cientista Tradicional", "Engenheiro de Dados", "GenAI"), vocês podem **deixar o modelo descobrir os clusters**:
+
+1.  Pegue todas as descrições de profissionais do SOD que têm campo aberto preenchido
+2.  Codifique-as com embeddings
+3.  Aplique K-Means ou DBSCAN no espaço de embeddings
+4.  Para cada cluster, identifique a frase mais "central" (mais próxima do centróide) — esse é o "arquétipo" automático daquele grupo
+
+Esta é uma técnica chamada **clustering semântico**, e o resultado é frequentemente mais informativo do que perfis definidos a priori pelo analista.
+
+## Checklist de entrega aprimorada
+
+Adicionem ao trabalho final, **pelo menos**:
+
+| Item | Onde aplicar | Impacto na nota |
+|------------------------|------------------------|------------------------|
+| Comparação TF-IDF vs Embeddings em ≥3 queries | Seção de modelagem RDI | Alto |
+| Pipeline híbrido (recall + re-rank) | Seção de modelagem RDI | Alto |
+| Análise de sentimentos em ≥1 campo textual livre | Seção de análise exploratória | Médio-Alto |
+| Visualização de espaço semântico (PCA ou t-SNE) | Seção de resultados | Médio |
+| Discussão crítica sobre quando cada técnica falha | Conclusão | Alto |
+
+::: callout-important
+## A diferenciação real é a discussão crítica
+
+Qualquer grupo competente vai entregar gráficos bonitos. O que separa um trabalho **MS/SS** de um trabalho **MM** é a **discussão crítica** — explicar quando o embedding errou e por quê, mostrar um caso em que o TF-IDF foi melhor (sim, isso acontece com queries muito específicas e bem formuladas lexicalmente), refletir sobre vieses do modelo multilíngue (treinado em corpus mais europeu do que brasileiro, por exemplo).
+
+Honestidade analítica vale mais do que esconder os pontos fracos.
+:::
+
+------------------------------------------------------------------------
+
+# Conclusão — O salto cognitivo desta aula
+
+Vou fechar com a síntese do que vocês acabaram de aprender.
+
+```{python}
+#| label: sintese-final
+
+print("="*65)
+print("   SÍNTESE — O QUE MUDOU NA SUA CAIXA DE FERRAMENTAS")
+print("="*65)
+
+passos = [
+    ("1. Representação",
+     "Texto deixa de ser saco de palavras (TF-IDF, esparso, 10k+ dim)\n"
+     "   e vira vetor denso de significado (Embedding, 384 dim)."),
+    ("2. Similaridade",
+     "Cosseno continua sendo o mesmo cosseno —\n"
+     "   o que muda é o espaço onde ele opera."),
+    ("3. Generalização",
+     "A mesma matriz de embeddings serve para:\n"
+     "   • match de perfis (busca semântica)\n"
+     "   • análise de sentimentos (classificação zero-shot)\n"
+     "   • clustering semântico (segmentação não-supervisionada)\n"
+     "   • detecção de anomalia (textos fora do espaço esperado)"),
+    ("4. Pipeline industrial",
+     "Combinar TF-IDF (rápido, recall alto) com Embeddings (preciso,\n"
+     "   semântico) é o padrão de produção de buscadores modernos."),
+    ("5. Diferenciação acadêmica",
+     "Vocês agora têm um conjunto de técnicas que poucos colegas de\n"
+     "   graduação aplicam em trabalhos finais. Usem com critério."),
+]
+
+for titulo, texto in passos:
+    print(f"\n  ▸ {titulo}")
+    print(f"     {texto}")
+
+print("\n" + "="*65)
+```
+
+> Mais importante do que decorar o nome `paraphrase-multilingual-MiniLM-L12-v2` é internalizar a ideia que ele representa: **textos não são strings, são pontos no espaço**. Quando vocês conseguirem pensar assim em qualquer problema de texto, vocês saíram do "uso bibliotecas" e entraram em "domino a representação".
+
+------------------------------------------------------------------------
+
+# Apêndice A — Notas técnicas e *troubleshooting*
+
+## "O download do modelo está muito lento"
+
+A primeira vez baixa \~117 MB. Em rede do CEUB pode demorar. Soluções:
+
+- Baixar uma vez em casa, deixar o cache (`~/.cache/huggingface/`) e levar a pasta na máquina do laboratório
+- Compartilhar o cache entre colegas do grupo (todos com o mesmo `cache/`)
+
+## "Estourou a memória"
+
+O MiniLM cabe em qualquer notebook moderno (consome \~500 MB de RAM). Se estourar, é provavelmente outra coisa no ambiente. Reinicie o kernel do Python (no RStudio: *Session → Restart R* + *reticulate::py_run_string("import gc; gc.collect()")*).
+
+## "Onde está o arquivo `dados_state_of_data_consolidados.parquet`?"
+
+É o mesmo arquivo gerado na **Aula 12**, quando consolidamos as quatro edições do State of Data Brasil (2021–2024) num único parquet. Se vocês não o têm em mãos, recuperem do material da Aula 12 ou do drive da disciplina.
+
+O Bloco 5.1 já procura o arquivo em três localizações habituais (raiz do projeto, pasta `dados/`, e diretório pai). Se estiver em outro lugar, ajustem a lista `caminhos_candidatos`.
+
+## "Quero rodar a análise nos 17 mil respondentes, não na amostra de 1.000"
+
+No Bloco 5.5, altere a constante:
+
+``` python
+TAMANHO_AMOSTRA = 1000   # padrão didático
+# Para rodar no conjunto inteiro:
+# TAMANHO_AMOSTRA = len(df_ins)
+```
+
+Atenção: codificar 17 mil textos em CPU leva entre 3 e 6 minutos no MiniLM. Vale a pena salvar os embeddings em disco depois (`np.save("emb_motivos.npy", embs)`) para não recodificar a cada render.
+
+## "Quero analisar outras colunas de texto do SoD"
+
+Boas candidatas no parquet que vocês têm:
+
+- `p3_d_quais_sao_os_3_maiores_desafios_que_voce_tem_como_gestor_no_atual_momento` — desafios reportados por gestores (apenas n ≈ 2.000, mas texto multifacetado)
+- `p2_o_quais_os_principais_criterios_que_voce_leva_em_consideracao_no_momento_de_decidir_onde_trabalhar` — critérios na decisão de carreira
+- `p3_c_quais_dessas_responsabilidades_fazem_parte_da_sua_rotina_atual_de_trabalho_como_gestor` — natureza do trabalho de gestores
+
+O pipeline do Bloco 5 funciona idêntico — basta trocar o nome da coluna e ajustar as âncoras ao novo campo semântico.
+
+## "Quero análise de sentimentos com modelo dedicado, não zero-shot"
+
+Modelos dedicados costumam acertar mais em domínios específicos, ao custo de complexidade adicional. Boas opções:
+
+- `pysentimiento/robertuito-sentiment-analysis` (PT-BR / ES, modelo treinado especificamente)
+- `cardiffnlp/twitter-xlm-roberta-base-sentiment-multilingual` (multilíngue, \~500 MB)
+
+Para uma primeira versão, o zero-shot que ensinamos é suficiente. Para uma versão final mais robusta, podem comparar os dois.
+
+## "Como cito o modelo no relatório?"
+
+Reimers, N. & Gurevych, I. (2019). *Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks*. EMNLP. Modelo multilíngue baseado em Wang et al. (2020), *MiniLM*.
+
+------------------------------------------------------------------------
+
+# Apêndice B — Para quem quiser ir além
+
+- **RAG (Retrieval-Augmented Generation):** combine o pipeline desta aula com um LLM (Llama, Claude, GPT) para responder perguntas sobre o corpus. É a próxima fronteira natural.
+- **Fine-tuning leve:** se vocês tiverem \~500 pares (texto, rótulo) do seu domínio específico, podem fazer fine-tuning do MiniLM e melhorar significativamente. Olhar a biblioteca `sentence-transformers` documentação.
+- **Modelos brasileiros:** Maritaca AI tem modelos abertos com foco em português brasileiro que valem investigação para versões aprimoradas.
+
+------------------------------------------------------------------------
+
+::: callout-tip
+## Próximo encontro
+
+Na aula seguinte fechamos o ciclo da disciplina: **pipeline completo coleta → tratamento → indexação → ranqueamento → visualização**, integrando tudo o que vimos. Depois disso, é só Trabalho Final.
+
+Tragam dúvidas. Esta aula foi densa de propósito.
+:::
+
+[^1]
+
+[^1]: Aula desenvolvida com apoio de ferramentas de IA na estruturação do material. Revisão técnica, escolha do modelo, calibração do corpus simulado e curadoria pedagógica são responsabilidade do professor.
