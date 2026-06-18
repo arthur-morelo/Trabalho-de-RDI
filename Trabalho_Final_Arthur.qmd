@@ -1,78 +1,34 @@
 ---
-title: "Trabalho Final - Recuperação da Informação"
-subtitle: "Análise Comparativa: State of Data Brasil vs. LinkedIn"
+title: "Análise de Mercado para Cibersegurança e DevOps"
 author: "Arthur Morelo"
-format: 
-  html:
-    theme: cosmo
-    toc: false
-    embed-resources: true
-jupyter: python3
+format: pdf
+toc: false
 ---
 
-### Painel Interativo de Mercado
+## Introdução
 
-Abaixo está o cruzamento geográfico entre o volume de vagas ativas raspadas e a média salarial declarada pelos profissionais de dados. **Passe o mouse sobre os gráficos para explorar os detalhes.**
+O mercado de tecnologia tem passado por uma transformação significativa nos últimos anos, migrando de uma demanda massiva por desenvolvimento de software genérico para a especialização em nichos de alta criticidade. Dentre estes, Cibersegurança e DevOps destacam-se como pilares fundamentais para a garantia de resiliência, escalabilidade e proteção de dados nas operações corporativas modernas. A crescente complexidade das ameaças digitais e a necessidade de entregas contínuas e automatizadas tornam esses profissionais peças-chave no ecossistema tecnológico atual.
 
-```{python}
-#| echo: false
-#| warning: false
-#| label: fig-dashboard-mercado
+Para compreender a fundo essa dinâmica de mercado, foi realizada uma ampla extração e análise de dados provenientes de fontes diversificadas, como LinkedIn, CIEE e Jobbol. Essa abordagem multiplataforma permitiu capturar desde oportunidades de estágio até posições sêniores de engenharia e arquitetura, oferecendo uma visão panorâmica e realista sobre o volume de vagas, a remuneração média e os principais desafios enfrentados pelos profissionais destas áreas de infraestrutura.
 
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-import pandas as pd
+## Requisições do Mercado
 
-# Dados extraídos do Join Analítico
-dados = {
-    'UF': ['SP', 'PR', 'RJ', 'DF', 'MG'],
-    'Volume_Vagas': [64, 6, 4, 2, 2],
-    'Media_Salarial': [9448.41, 8406.50, 7171.59, 10656.71, 7382.81]
-}
-df_join = pd.DataFrame(dados).sort_values(by='Volume_Vagas', ascending=False)
+A partir da aplicação de técnicas de Processamento de Linguagem Natural (NLP) sobre as descrições das vagas, foi possível extrair a frequência das principais habilidades exigidas pelo mercado. A análise do gráfico de requisições revela que ferramentas de orquestração de contêineres e fundamentos de sistemas operacionais dominam os requisitos das vagas. O domínio de tecnologias como Kubernetes, Docker, Linux e provedores de nuvem pública (AWS) tornou-se mandatório, evidenciando uma transição de profissionais puramente focados em código para especialistas capazes de projetar, automatizar e proteger infraestruturas complexas e distribuídas.
 
-# Criando layout lado a lado
-fig = make_subplots(
-    rows=1, cols=2,
-    subplot_titles=("Demanda de Mercado (Volume de Vagas)", "Compensação Financeira (Média Salarial)"),
-    horizontal_spacing=0.15
-)
+## Motores de Recuperação de Informação (RI)
 
-# Gráfico 1: Vagas
-fig.add_trace(
-    go.Bar(
-        x=df_join['UF'],
-        y=df_join['Volume_Vagas'],
-        name="Vagas",
-        marker_color='#2c3e50',
-        hovertemplate="<b>Estado:</b> %{x}<br><b>Vagas Coletadas:</b> %{y}<extra></extra>"
-    ),
-    row=1, col=1
-)
+A eficiência na localização de oportunidades adequadas depende diretamente do motor de busca utilizado. Na análise, avaliamos três abordagens distintas de Recuperação de Informação:
 
-# Gráfico 2: Salário
-fig.add_trace(
-    go.Scatter(
-        x=df_join['UF'],
-        y=df_join['Media_Salarial'],
-        name="Média Salarial",
-        mode="lines+markers",
-        line=dict(color='#e74c3c', width=3),
-        marker=dict(size=10),
-        hovertemplate="<b>Estado:</b> %{x}<br><b>Média:</b> R$ %{y:,.2f}<extra></extra>"
-    ),
-    row=1, col=2
-)
+*   **Score Booleano:** É o modelo mais elementar de RI, baseado na teoria de conjuntos. Ele calcula a relevância através da presença ou ausência exata dos termos da consulta (*query*) no documento. Se a palavra exata não estiver no texto, o documento é sumariamente ignorado, sem meio-termo ou cálculo de similaridade semântica.
+*   **Score BM25 (Best Matching 25):** Representa o estado da arte dos modelos probabilísticos baseados em frequência de termos (TF-IDF). Ele não apenas verifica a presença da palavra-chave, mas também pondera a frequência com que o termo aparece no documento em relação à sua raridade em toda a coleção de vagas, penalizando documentos excessivamente longos para manter a precisão do ranqueamento.
+*   **Score de Embeddings:** Utiliza redes neurais profundas (arquitetura Transformer) para converter textos e consultas em vetores matemáticos densos em um espaço n-dimensional. A relevância é calculada pela similaridade do cosseno entre os vetores. Este modelo não busca correspondência exata de palavras, mas sim a similaridade semântica, conseguindo relacionar termos sinônimos ou conceitos próximos dentro de um mesmo contexto técnico.
 
-# Customização do Layout
-fig.update_layout(
-    template="plotly_white",
-    height=500,
-    showlegend=False,
-    margin=dict(l=40, r=40, t=60, b=40)
-)
+## Visualização de Dados
 
-fig.update_yaxes(title_text="Quantidade", row=1, col=1)
-fig.update_yaxes(title_text="Reais (R$)", tickformat=",.0f", row=1, col=2)
+![Dashboard Analítico de Cibersegurança e DevOps](dashboard_cybersec.png){width=100%}
 
-fig
+## Conclusão: Recuperação de Informação e NLP
+
+A análise das descrições de vagas demonstrou de forma clara as limitações das abordagens tradicionais de busca em comparação com as tecnologias modernas de Processamento de Linguagem Natural (NLP). O modelo Booleano de Recuperação de Informação (RI), por basear-se na correspondência exata de palavras-chave, frequentemente falha ao lidar com a riqueza de vocabulário da área de infraestrutura. Se uma vaga requisita conhecimentos em "Containers", uma busca Booleana estrita pela palavra "Docker" não a recuperaria.
+
+Por outro lado, o modelo baseado em Embeddings semânticos apresentou resultados vastamente superiores na identificação de oportunidades. Ao projetar os textos em um espaço vetorial de alta dimensionalidade, o modelo de Embeddings é capaz de compreender o contexto e a intenção subjacente nas descrições. Dessa forma, ele identifica com precisão a correlação semântica entre termos técnicos — compreendendo, por exemplo, que "Docker" e "Containers", ou "AWS" e "Cloud", referem-se a conceitos intimamente ligados. Essa capacidade de abstração e entendimento de contexto torna a extração e recomendação de vagas de DevOps e Cibersegurança muito mais inteligentes, assertivas e aderentes à realidade do mercado.
