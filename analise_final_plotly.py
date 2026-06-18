@@ -1,186 +1,131 @@
 import pandas as pd
+import numpy as np
 import re
-import plotly.graph_objects as go
-import plotly.io as pio
-from plotly.subplots import make_subplots
 from rank_bm25 import BM25Okapi
-from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
+from sentence_transformers import SentenceTransformer, util
 from transformers import pipeline
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
-# Setup inicial e configuração
-pio.renderers.default = "notebook_connected"
-
-# Dados Simulados com Desafios_Relatados para Análise de Sentimentos
-dados = {
-    'UF': ['SP', 'PR', 'RJ', 'DF', 'MG'],
-    'Volume_Vagas': [64, 6, 4, 2, 2],
-    'Media_Salarial': [9448.41, 8406.50, 7171.59, 10656.71, 7382.81],
-    'Descricao_Vaga': [
-        "Vaga para Cientista de Dados focado em Python, SQL e machine learning na nuvem.",
-        "Desenvolvedor Front-end com alta experiência em React, TypeScript e JavaScript.",
-        "Engenheiro de Dados Sênior. Requisitos: PySpark, SQL, Python e arquitetura AWS.",
-        "Procuramos Cientista de Dados especialista. Domínio em Python, estatística e deploy de modelos.",
-        "Estágio em análise de dados. Essencial saber Python, Pandas, SQL e visualização de dados."
+# Dados de NLP (Simulação)
+data = {
+    'titulo_vaga': ['Engenheiro DevOps', 'Analista de SOC pleno', 'Especialista em Pentest e Red Team', 'Cloud Engineer AWS', 'Arquiteto de Segurança'],
+    'descricao': [
+        'Engenheiro DevOps com foco em AWS, Docker e Kubernetes. Necessário experiência em CI/CD.',
+        'Atuação no Security Operations Center analisando incidentes 24/7.',
+        'Realizar testes de invasão, simular ataques e elaborar relatórios de vulnerabilidades.',
+        'Migração e manutenção de infraestrutura cloud na AWS utilizando Terraform e Kubernetes.',
+        'Desenho de soluções seguras e arquitetura zero-trust em ambientes híbridos.'
     ],
-    'Desafios_Relatados': [
-        "Excelente pacote de benefícios e progressão",
-        "Ambiente de trabalho tóxico e salário baixo",
-        "Ferramentas modernas, mas muita pressão",
-        "Equipe muito colaborativa e horários flexíveis",
-        "Gestão desorganizada e falta de plano de carreira"
-    ]
+    'volume': [150, 200, 80, 120, 90],
+    'salario': [12000, 8500, 15000, 13500, 18000]
 }
-df = pd.DataFrame(dados).sort_values(by='Volume_Vagas', ascending=False)
+df_vagas = pd.DataFrame(data)
 
-# Pré-processamento (PLN) para RI
-def limpar_texto(texto):
-    texto = str(texto).lower()
-    return re.sub(r'[^\w\s]', '', texto)
+# Limpeza de texto
+def clean_text(text):
+    text = text.lower()
+    text = re.sub(r'[^\w\s]', '', text)
+    return text
 
-df['Texto_Limpo'] = df['Descricao_Vaga'].apply(limpar_texto)
+df_vagas['descricao_limpa'] = df_vagas['descricao'].apply(clean_text)
 
-query = "cientista de dados python"
-query_limpa = limpar_texto(query)
+# Modelos de RI
+query = "devops aws kubernetes"
+query_limpa = clean_text(query)
 query_tokens = query_limpa.split()
 
-# Modelo 1: Booleano
-def busca_booleana(texto, tokens_query):
-    texto_tokens = set(texto.split())
-    return 1 if all(token in texto_tokens for token in tokens_query) else 0
+# Score Booleano
+def boolean_score(text, tokens):
+    text_tokens = text.split()
+    return sum([1 for t in tokens if t in text_tokens])
 
-df['Score_Booleano'] = df['Texto_Limpo'].apply(lambda x: busca_booleana(x, query_tokens))
+df_vagas['score_booleano'] = df_vagas['descricao_limpa'].apply(lambda x: boolean_score(x, query_tokens))
 
-# Modelo 2: BM25
-corpus_tokenizado = [texto.split() for texto in df['Texto_Limpo']]
-bm25 = BM25Okapi(corpus_tokenizado)
-df['Score_BM25'] = bm25.get_scores(query_tokens)
+# Score BM25
+tokenized_corpus = [doc.split() for doc in df_vagas['descricao_limpa']]
+bm25 = BM25Okapi(tokenized_corpus)
+df_vagas['score_bm25'] = bm25.get_scores(query_tokens)
 
-# Modelo 3: Embeddings
-modelo_st = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2', device='cpu')
-query_embedding = modelo_st.encode([query_limpa])
-corpus_embeddings = modelo_st.encode(df['Texto_Limpo'].tolist())
-df['Score_Embeddings'] = cosine_similarity(query_embedding, corpus_embeddings).flatten()
+# Score Embeddings
+model_embed = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+embeddings = model_embed.encode(df_vagas['descricao_limpa'].tolist(), convert_to_tensor=True)
+query_embedding = model_embed.encode(query_limpa, convert_to_tensor=True)
+cosine_scores = util.cos_sim(query_embedding, embeddings)[0]
+df_vagas['score_embeddings'] = cosine_scores.cpu().numpy()
 
-# Análise de Sentimentos Zero-Shot
-classificador = pipeline("zero-shot-classification", model="MoritzLaurer/mDeBERTa-v3-base-mnli-xnli")
-labels_sentimento = ['Positivo', 'Negativo', 'Neutro']
+# Análise de Sentimento (Zero-Shot)
+frases_desafios = [
+    "A infraestrutura caiu no meio da madrugada e o alerta não funcionou.",
+    "Conseguimos automatizar todo o pipeline de deploy com sucesso.",
+    "Revisar logs de auditoria do sistema todos os dias é uma tarefa repetitiva.",
+    "A nova política de segurança melhorou significativamente a nossa resiliência."
+]
 
-def classificar_sentimento(texto):
-    resultado = classificador(texto, labels_sentimento)
-    return resultado['labels'][0]
+classifier = pipeline("zero-shot-classification", model="MoritzLaurer/mDeBERTa-v3-base-mnli-xnli")
+candidate_labels = ["Positivo", "Neutro", "Negativo"]
 
-df['Sentimento_Dominante'] = df['Desafios_Relatados'].apply(classificar_sentimento)
+resultados_sentimento = classifier(frases_desafios, candidate_labels)
+sentimentos = [res['labels'][0] for res in resultados_sentimento]
 
-# Preparação de DataFrames auxiliares
-df_tabela = df.sort_values(by='Score_Embeddings', ascending=False)
-contagem_sentimentos = df['Sentimento_Dominante'].value_counts().reset_index()
+df_sentimentos = pd.DataFrame({'Sentimento': sentimentos})
+contagem_sentimentos = df_sentimentos['Sentimento'].value_counts().reset_index()
 contagem_sentimentos.columns = ['Sentimento', 'Contagem']
 
-# Layout do Dashboard de Alta Resolução (Grid Assimétrico 3x2 Invertido)
+# Visualização (Grid Assimétrico)
 fig = make_subplots(
     rows=3, cols=2,
-    specs=[[{"type": "xy"}, {"type": "xy"}], 
-           [{"type": "domain", "colspan": 2}, None], 
+    specs=[[{"type": "bar", "colspan": 2}, None],
+           [{"type": "scatter"}, {"type": "domain"}],
            [{"type": "table", "colspan": 2}, None]],
-    subplot_titles=(
-        "Volume de Vagas por UF", 
-        "Média Salarial por UF (R$)", 
-        "Sentimento dos Profissionais",
-        "Ranking de Vagas: Modelos de RI"
-    ),
-    vertical_spacing=0.04,
-    row_heights=[0.22, 0.48, 0.30]
+    subplot_titles=("Volume de Vagas por Cargo", "Média Salarial", "Sentimento de Desafios Profissionais", "Scores de Recuperação de Informação (RI)")
 )
 
-# Linha 1, Col 1: Vagas por UF (Estética Neon)
+# Gráfico de Barras (Volume)
 fig.add_trace(
-    go.Bar(
-        x=df['UF'],
-        y=df['Volume_Vagas'],
-        name="Vagas",
-        marker_color='#00E5FF',
-        opacity=0.9,
-        hovertemplate="<b>UF:</b> %{x}<br><b>Vagas:</b> %{y}<extra></extra>"
-    ),
+    go.Bar(x=df_vagas['titulo_vaga'], y=df_vagas['volume'], marker_color='#00CC96'),
     row=1, col=1
 )
 
-# Linha 1, Col 2: Salário por UF (Estética Neon)
+# Gráfico de Linhas (Salário)
 fig.add_trace(
-    go.Scatter(
-        x=df['UF'],
-        y=df['Media_Salarial'],
-        name="Média Salarial",
-        mode='lines+markers',
-        line=dict(color='#FF3D00', width=4),
-        marker=dict(color='#FF3D00', size=12),
-        hovertemplate="<b>UF:</b> %{x}<br><b>Média:</b> R$ %{y:,.2f}<extra></extra>"
-    ),
-    row=1, col=2
-)
-
-# Linha 2, Col 1: Gráfico de Rosquinha de Sentimento (Estética Neon)
-cores_sentimento = {'Positivo': '#00E5FF', 'Negativo': '#FF3D00', 'Neutro': '#9CA3AF'}
-fig.add_trace(
-    go.Pie(
-        labels=contagem_sentimentos['Sentimento'],
-        values=contagem_sentimentos['Contagem'],
-        name="Sentimento",
-        marker=dict(colors=[cores_sentimento.get(s, '#3498db') for s in contagem_sentimentos['Sentimento']]),
-        hole=0.4,
-        textinfo='label+percent',
-        textfont=dict(size=16),
-        hovertemplate="<b>%{label}</b><br>Quantidade: %{value} (%{percent})<extra></extra>"
-    ),
+    go.Scatter(x=df_vagas['titulo_vaga'], y=df_vagas['salario'], mode='lines+markers', line=dict(color='#AB63FA', width=3)),
     row=2, col=1
 )
 
-# Preparando cores alternadas para a tabela (Dark Mode)
-n_rows = len(df_tabela)
-fill_colors = [['#374151', '#1F2937'][i % 2] for i in range(n_rows)]
+# Donut Chart (Sentimentos)
+fig.add_trace(
+    go.Pie(labels=contagem_sentimentos['Sentimento'], values=contagem_sentimentos['Contagem'], hole=0.5, marker_colors=['#EF553B', '#00CC96', '#636EFA']),
+    row=2, col=2
+)
 
-# Linha 3, Col 1: Tabela de Alto Contraste
+# Tabela (Scores de RI)
 fig.add_trace(
     go.Table(
-        header=dict(
-            values=['<b>Descrição</b>', '<b>Booleano</b>', '<b>BM25</b>', '<b>Embeddings</b>'],
-            fill_color='#1F2937',
-            align='left',
-            font=dict(size=16, color='#F3F4F6'),
-            height=40
-        ),
-        cells=dict(
-            values=[
-                df_tabela['Descricao_Vaga'], 
-                df_tabela['Score_Booleano'], 
-                df_tabela['Score_BM25'].round(4), 
-                df_tabela['Score_Embeddings'].round(4)
-            ],
-            fill_color=[fill_colors * 4], 
-            align='left',
-            font=dict(size=14, color='#D1D5DB'),
-            height=45
-        )
+        header=dict(values=["Vaga", "Score Booleano", "Score BM25", "Score Embeddings"],
+                    fill_color='#2a2a2a',
+                    align='left',
+                    font=dict(color='white')),
+        cells=dict(values=[df_vagas['titulo_vaga'], 
+                           df_vagas['score_booleano'], 
+                           df_vagas['score_bm25'].round(3), 
+                           df_vagas['score_embeddings'].round(3)],
+                   fill_color='#1f1f1f',
+                   align='left',
+                   font=dict(color='white'))
     ),
     row=3, col=1
 )
 
-# Acabamento Profissional e Dimensionamento (Dark Mode)
+# Tema e Dimensões
 fig.update_layout(
-    template="plotly_dark",
-    paper_bgcolor='#111827',
-    plot_bgcolor='rgba(0,0,0,0)',
-    title_text="Dashboard Analítico - Mercado de Dados & NLP",
-    title_font_size=28,
+    template='plotly_dark',
+    height=1800,
+    width=1200,
     showlegend=False,
-    height=1900,
-    margin=dict(l=40, r=40, t=80, b=40)
+    title_text="Dashboard Analítico: Cibersegurança & DevOps",
+    title_x=0.5
 )
 
-fig.update_yaxes(title_text="Quantidade", row=1, col=1)
-fig.update_yaxes(title_text="Salário (R$)", tickprefix="R$ ", tickformat=",.2f", row=1, col=2)
-
-# Exportação HTML Autônoma
-fig.write_html('Trabalho_Final_Automatizado.html', include_plotlyjs=True)
-print("O script analise_final_plotly.py gerou o HTML de alta resolução (Dark Mode) com sucesso.")
+# Exportação Estática
+fig.write_image("dashboard_cybersec.png", width=1200, height=1800, scale=2)
