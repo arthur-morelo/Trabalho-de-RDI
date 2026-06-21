@@ -6,6 +6,9 @@ from sentence_transformers import SentenceTransformer, util
 from transformers import pipeline
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import os
+
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Dados de NLP (Simulação)
 data = {
@@ -268,4 +271,4 @@ fig.update_layout(
 )
 
 # Exportação Estática
-fig.write_image("dashboard_cybersec.png", width=1200, height=1900, scale=2)
+fig.write_image("../output/dashboard_cybersec.png", width=1200, height=1900, scale=2)

@@ -3,6 +3,9 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import time
 import random
+import os
+
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 def scrape_linkedin():
     queries = ['Cybersecurity', 'Segurança da Informação', 'DevOps', 'Cloud Engineer']
@@ -106,7 +109,7 @@ def main():
     
     if not df.empty:
         df = df.dropna(subset=['titulo_vaga', 'empresa', 'localizacao', 'descricao'])
-        df.to_parquet('vagas_infra_cyber.parquet', engine='pyarrow', index=False)
+        df.to_parquet('../data/vagas_infra_cyber.parquet', engine='pyarrow', index=False)
 
 if __name__ == "__main__":
     main()

@@ -25,7 +25,7 @@ A eficiência na localização de oportunidades adequadas depende diretamente do
 
 ## Visualização de Dados
 
-![Dashboard Analítico de Cibersegurança e DevOps](dashboard_cybersec.png){width=100%}
+![Dashboard Analítico de Cibersegurança e DevOps](../output/dashboard_cybersec.png){width=100%}
 
 ## Conclusão: Recuperação de Informação e NLP
 
