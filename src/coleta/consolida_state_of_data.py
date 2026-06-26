@@ -13,10 +13,10 @@ dados_consolidados = pd.DataFrame({
 })
 
 # Garante que a pasta data existe no nível anterior
-os.makedirs('../data', exist_ok=True)
+os.makedirs('../../data', exist_ok=True)
 
 # Salva o arquivo consolidado
-caminho_saida = '../data/dados_state_of_data_consolidados.parquet'
+caminho_saida = '../../data/dados_state_of_data_consolidados.parquet'
 dados_consolidados.to_parquet(caminho_saida, index=False)
 
 print(f"Sucesso! Base consolidada salva em: {caminho_saida}")

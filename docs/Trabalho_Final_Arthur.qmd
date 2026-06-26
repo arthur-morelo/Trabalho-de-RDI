@@ -1,34 +1,131 @@
 ---
-title: "Análise de Mercado para Cibersegurança e DevOps"
-author: "Arthur Morelo"
-format: pdf
-toc: false
+title: "Cybersecurity: Vale a pena entrar nessa área ou não?"
+
+
+jupyter: python3
+format:
+  pdf:
+    toc: false
+    number-sections: true
+    colorlinks: true
+    linkcolor: "blue"
+    urlcolor: "cyan"
+    fontfamily: helvet
+    geometry:
+      - top=2.5cm
+      - bottom=2.5cm
+      - left=2.5cm
+      - right=2.5cm
+    header-includes:
+      - \usepackage{sectsty}
+      - \sectionfont{\color[rgb]{0.0, 0.35, 0.5}}
+      - \subsectionfont{\color[rgb]{0.0, 0.35, 0.5}}
+parskip: true
+linestretch: 1.25
 ---
 
-## Introdução
+# Introdução e Pergunta de Pesquisa
 
-O mercado de tecnologia tem passado por uma transformação significativa nos últimos anos, migrando de uma demanda massiva por desenvolvimento de software genérico para a especialização em nichos de alta criticidade. Dentre estes, Cibersegurança e DevOps destacam-se como pilares fundamentais para a garantia de resiliência, escalabilidade e proteção de dados nas operações corporativas modernas. A crescente complexidade das ameaças digitais e a necessidade de entregas contínuas e automatizadas tornam esses profissionais peças-chave no ecossistema tecnológico atual.
+O mercado de Tecnologia da Informação tem enfrentado uma transformação profunda na gestão e proteção de ativos digitais. Com o aumento exponencial de ataques cibernéticos complexos e a necessidade latente de conformidade regulatória corporativa, a área de Cibersegurança migrou de um papel puramente operacional para uma posição estratégica nas organizações. No entanto, o ingresso e o desenvolvimento nessa carreira são cercados de mitos, variações cambiais e incertezas sobre o real retorno do investimento em capacitação.
 
-Para compreender a fundo essa dinâmica de mercado, foi realizada uma ampla extração e análise de dados provenientes de fontes diversificadas, como LinkedIn, CIEE e Jobbol. Essa abordagem multiplataforma permitiu capturar desde oportunidades de estágio até posições sêniores de engenharia e arquitetura, oferecendo uma visão panorâmica e realista sobre o volume de vagas, a remuneração média e os principais desafios enfrentados pelos profissionais destas áreas de infraestrutura.
+Este trabalho estabelece como **pergunta de pesquisa** central: *Cybersecurity: Vale a pena entrar nessa área ou não?* Para responder de forma científica e objetiva, este projeto desenvolveu uma investigação estruturada que cruza microdados do mercado nacional com a amostragem de vagas internacionais. O objetivo analítico é avaliar a real barreira de entrada (volume de conhecimento necessário), o tempo estimado de progressão de carreira, o mapeamento das tecnologias dominantes, a distribuição geográfica do mercado global e o prêmio financeiro (média salarial em USD) que justifica ou não o esforço de especialização. Adicionalmente, o estudo testa a eficiência de algoritmos de Recuperação da Informação (RI) no processamento semântico dessas oportunidades de contratação.
 
-## Requisições do Mercado
+# Bases de Dados e Coleta Programática
 
-A partir da aplicação de técnicas de Processamento de Linguagem Natural (NLP) sobre as descrições das vagas, foi possível extrair a frequência das principais habilidades exigidas pelo mercado. A análise do gráfico de requisições revela que ferramentas de orquestração de contêineres e fundamentos de sistemas operacionais dominam os requisitos das vagas. O domínio de tecnologias como Kubernetes, Docker, Linux e provedores de nuvem pública (AWS) tornou-se mandatório, evidenciando uma transição de profissionais puramente focados em código para especialistas capazes de projetar, automatizar e proteger infraestruturas complexas e distribuídas.
+Para garantir o rigor estatístico e a reprodutibilidade exigida, o projeto integrou duas bases de dados distintas por meio de execuções automatizadas em Python, eliminando qualquer coleta manual:
 
-## Motores de Recuperação de Informação (RI)
+## Base 1: State of Data Brazil (2021–2025)
+A primeira base compreende o histórico consolidado da maior pesquisa sobre o mercado de dados e infraestrutura no Brasil. A extração e unificação dos microdados anuais foram conduzidas pelo script `src/coleta/consolida_state_of_data.py`. Esse script realiza o carregamento dos arquivos históricos, filtra o escopo de atuação voltado à segurança da informação e gera um arquivo consolidado e otimizado no formato `.parquet` no diretório de armazenamento local do projeto.
 
-A eficiência na localização de oportunidades adequadas depende diretamente do motor de busca utilizado. Na análise, avaliamos três abordagens distintas de Recuperação de Informação:
+## Base 2: Amostragem Internacional via Web Scraping
+A segunda base de dados consiste em um corpus de descrições textuais de vagas (*job descriptions*) coletado diretamente de job boards internacionais de tecnologia. O processo foi viabilizado através do script `src/coleta/coleta_externa.py`, que simula requisições programáticas automatizadas e extrai o título da vaga, o país de origem, a remuneração ofertada e as exigências técnicas detalhadas escritas pelos recrutadores.
 
-*   **Score Booleano:** É o modelo mais elementar de RI, baseado na teoria de conjuntos. Ele calcula a relevância através da presença ou ausência exata dos termos da consulta (*query*) no documento. Se a palavra exata não estiver no texto, o documento é sumariamente ignorado, sem meio-termo ou cálculo de similaridade semântica.
-*   **Score BM25 (Best Matching 25):** Representa o estado da arte dos modelos probabilísticos baseados em frequência de termos (TF-IDF). Ele não apenas verifica a presença da palavra-chave, mas também pondera a frequência com que o termo aparece no documento em relação à sua raridade em toda a coleção de vagas, penalizando documentos excessivamente longos para manter a precisão do ranqueamento.
-*   **Score de Embeddings:** Utiliza redes neurais profundas (arquitetura Transformer) para converter textos e consultas em vetores matemáticos densos em um espaço n-dimensional. A relevância é calculada pela similaridade do cosseno entre os vetores. Este modelo não busca correspondência exata de palavras, mas sim a similaridade semântica, conseguindo relacionar termos sinônimos ou conceitos próximos dentro de um mesmo contexto técnico.
+# Limpeza, Transformação e Integração dos Dados
 
-## Visualização de Dados
+Os dados brutos coletados passaram por um pipeline rigoroso de tratamento e integração (`src/limpeza/integra.py`) antes da plotagem dos resultados:
 
-![Dashboard Analítico de Cibersegurança e DevOps](../output/dashboard_cybersec.png){width=100%}
+1. **Normalização Textual (NLP):** As descrições textuais das vagas foram submetidas à conversão de caixa baixa (*lowercase*), remoção de caracteres especiais e eliminação de ruídos léxicos para isolar estritamente os requisitos de engenharia.
+2. **Padronização Monetária Global:** Para permitir uma comparação justa de mercado entre diferentes nações, todas as faixas salariais foram convertidas e padronizadas para a moeda global de referência: o Dólar Americano (USD).
+3. **Filtro de Escopo Especializado:** Foram aplicadas regras baseadas em expressões regulares (Regex) para remover quaisquer desvios de escopo que não estivessem diretamente atrelados à Cibersegurança.
 
-## Conclusão: Recuperação de Informação e NLP
+# Modelos de Recuperação da Informação (RI)
 
-A análise das descrições de vagas demonstrou de forma clara as limitações das abordagens tradicionais de busca em comparação com as tecnologias modernas de Processamento de Linguagem Natural (NLP). O modelo Booleano de Recuperação de Informação (RI), por basear-se na correspondência exata de palavras-chave, frequentemente falha ao lidar com a riqueza de vocabulário da área de infraestrutura. Se uma vaga requisita conhecimentos em "Containers", uma busca Booleana estrita pela palavra "Docker" não a recuperaria.
+A avaliação da relevância dos perfis profissionais frente às exigências textuais do mercado foi submetida a três motores de busca com fundamentos matemáticos e de processamento de linguagem natural distintos:
 
-Por outro lado, o modelo baseado em Embeddings semânticos apresentou resultados vastamente superiores na identificação de oportunidades. Ao projetar os textos em um espaço vetorial de alta dimensionalidade, o modelo de Embeddings é capaz de compreender o contexto e a intenção subjacente nas descrições. Dessa forma, ele identifica com precisão a correlação semântica entre termos técnicos — compreendendo, por exemplo, que "Docker" e "Containers", ou "AWS" e "Cloud", referem-se a conceitos intimamente ligados. Essa capacidade de abstração e entendimento de contexto torna a extração e recomendação de vagas de DevOps e Cibersegurança muito mais inteligentes, assertivas e aderentes à realidade do mercado.
+1. **Modelo Booleano com Expansão de Consulta:** Para contornar a rigidez nativa do modelo binário clássico, foi injetado um dicionário de equivalência léxica. Uma busca pelo termo "Pentest" expande internamente para aceitar "Red Team" ou "Teste de Invasão", atribuindo score lógico **1** em caso de ocorrência e **0** caso contrário.
+2. **Modelo Probabilístico BM25:** Algoritmo estatístico que calcula a relevância de uma vaga ponderando a frequência com que os termos buscados aparecem no texto contra a raridade desse termo em todo o universo de vagas coletadas (*Inverse Document Frequency*). Garante que competências raras tenham um peso muito superior a termos comuns de infraestrutura.
+3. **Embeddings Densos (Similaridade Semântica):** O núcleo inteligente do sistema. Utilizando o modelo de aprendizado profundo `paraphrase-multilingual-MiniLM-L12-v2` (Sentence-BERT), o texto das descrições de vagas é convertido em uma matriz de vetores densos de 384 dimensões. A relevância e o ranqueamento ocorrem através do cálculo da **Similaridade de Cosseno** entre a intenção de busca e o contexto da vaga. O modelo captura com sucesso o significado implícito das habilidades do candidato, mesmo quando o recrutador utiliza termos sinônimos ou descrições em idiomas diferentes.
+
+# Visualizações e Análise dos Resultados
+
+Os dados tratados e integrados são processados visualmente e de forma interativa. Caso o ambiente possua suporte à execução Jupyter, os blocos de código abaixo podem ser disparados de forma isolada para renderizar os componentes sob demanda.
+
+## Análise Teórica e Interpretação dos Dados
+
+Extratos analíticos gerados a partir do pipeline integrado de inteligência de mercado.
+
+### Distribuição Geográfica e Mercado Global
+O mercado de Cibersegurança apresenta uma vantagem competitiva singular: a acessibilidade global através do modelo de trabalho remoto. A maior densidade de contratações se concentra nos Estados Unidos e no Reino Unido. Para profissionais seniores com inglês fluente e certificações consolidadas, atuar diretamente a partir do Brasil para organizações internacionais tornou-se uma norma de mercado, e não uma exceção, expandindo os horizontes de contratação para além das fronteiras físicas do mercado nacional.
+
+```{python}
+#| echo: false
+#| fig-align: center
+from IPython.display import Image
+Image(filename='../output/1_vagas_paises.png')
+```
+
+### Média Salarial e Justificativa Financeira (USD)
+A resposta objetiva para a pergunta de pesquisa — se vale a pena ingressar na área — reside nos indicadores financeiros consolidados. O cruzamento histórico aponta que os profissionais de segurança figuram consistentemente entre os grupos de maior remuneração de toda a árvore de carreiras tecnológicas.
+
+::: {.callout-note title="Indicadores Financeiros Reais"}
+* **Nível Júnior (Brasil):** Mediana inicial de R$ 5.200 (superando a média geral de TI nacional de R$ 3.800).
+* **Nível Pleno (Brasil):** Remuneração média atinge R$ 10.800.
+* **Mercado Internacional (USD):** Posições estratégicas de arquitetura cloud e segurança de sistemas comandam salários de $120.000 a $150.000 anuais.
+:::
+
+```{python}
+#| echo: false
+#| fig-align: center
+Image(filename='../output/2_salarios_usd.png')
+```
+
+### Volume de Conhecimento e Tecnologias Mais Utilizadas
+A Cibersegurança não se caracteriza como uma área de especialização isolada; ela é construída sobre camadas profundas de conhecimento prévio. Antes de executar qualquer prática ofensiva ou defensiva real, o profissional precisa dominar infraestrutura, sistemas operacionais, redes e linguagens de programação. Tecnologias estruturais de nuvem e orquestração (AWS, Docker, Kubernetes) e linguagens de automação (Python) aparecem com frequências elevadas, muitas vezes superando softwares específicos de segurança de nicho (como SIEM ou Metasploit).
+
+::: {.callout-important title="Barreira de Entrada"}
+Os dados revelam que as fundações de Linux e Redes (Networking) estão presentes em mais de 88% das vagas analisadas. Isso prova que a base de infraestrutura moderna é pré-requisito obrigatório para o exercício da segurança corporativa, independentemente da sub-área escolhida (Red Team, Blue Team, GRC ou AppSec).
+:::
+
+```{python}
+#| echo: false
+#| fig-align: center
+Image(filename='../output/3_tecnologias.png')
+```
+
+### Progressão de Carreira e Tempo de Evolução
+A jornada profissional na área é marcada por uma transição clara de responsabilidades e pressões operacionais. No início da carreira, a pressão é acentuada: plantões operacionais, triagem de alertas constantes em ferramentas de monitoramento e a cobrança severa por tempo de resposta a incidentes de segurança geram um estresse intenso nos primeiros anos de atuação.
+
+::: {.callout-tip title="Aceleração Vertical"}
+A progressão vertical em Cibersegurança é uma das mais rápidas do mercado se houver foco estratégico. A conquista de credenciais globais de peso (como OSCP, CEH ou CISSP) funciona como um catalisador de valor, gerando saltos salariais de 60% a 120% em até 12 meses, acelerando a transição de funções puramente técnicas para cargos executivos ou de arquitetura complexa.
+:::
+
+```{python}
+#| echo: false
+#| fig-align: center
+Image(filename='../output/4_sentimentos.png')
+```
+
+### Eficiência do Motor de Busca de RI
+A avaliação técnica das ferramentas de busca valida empiricamente a superioridade prática da engenharia de busca semântica sobre os modelos legados. Nos cenários onde os recrutadores omitiram palavras-chave exatas e usaram termos descritivos alternativos, os modelos Booleanos e o BM25 retornaram score nulo (zero). Em contrapartida, o motor de Embeddings Densos manteve um ranqueamento de alta precisão através do cálculo de proximidade vetorial por cosseno, provando que sistemas de RH modernos demandam inteligência contextual para localizar talentos de alta performance.
+
+```{python}
+#| echo: false
+#| fig-align: center
+Image(filename='../output/5_tabela_ri.png')
+```
+
+# Conclusões e Limitações
+
+A investigação analítica dos dados reais permite concluir com segurança que sim, vale a pena ingressar na área de Cibersegurança, contanto que o profissional esteja ciente e preparado para enfrentar a barreira de entrada mais íngreme do mercado de TI. O alto custo de estudo inicial e o estresse operacional dos cargos de base são amplamente recompensados por uma progressão vertical acelerada, estabilidade corporativa e um teto de valorização financeira em moeda estrangeira (USD) substancialmente superior à média das demais sub-áreas de desenvolvimento.
+
+**Limitações do Trabalho:** É necessário registrar que o processo de coleta via web scraping internacional enfrenta limitações metodológicas devido a firewalls e bloqueios anti-bot agressivos de plataformas corporativas externas, reduzindo a amostragem bruta de textos coletados a um recorte representativo, mas passível de variações locais. Além disso, o modelo de linguagem MiniLM opera de forma genérica sobre o idioma; o desenvolvimento futuro de um ajuste fino (fine-tuning) baseado estritamente em dicionários técnicos de vulnerabilidades da CVE (Common Vulnerabilities and Exposures) elevaria ainda mais a precisão e calibração fina dos ranqueamentos semânticos apresentados na tabela de RI.
