@@ -28,7 +28,7 @@ linestretch: 1.25
 
 O mercado de Tecnologia da Informação tem enfrentado uma transformação profunda na gestão e proteção de ativos digitais. Com o aumento exponencial de ataques cibernéticos complexos e a necessidade latente de conformidade regulatória corporativa, a área de Cibersegurança migrou de um papel puramente operacional para uma posição estratégica nas organizações. No entanto, o ingresso e o desenvolvimento nessa carreira são cercados de mitos, variações cambiais e incertezas sobre o real retorno do investimento em capacitação.
 
-Este trabalho estabelece como **pergunta de pesquisa** central: *Cybersecurity: Vale a pena entrar nessa área ou não?* Para responder de forma científica e objetiva, este projeto desenvolveu uma investigação estruturada que cruza microdados do mercado nacional com a amostragem de vagas internacionais. O objetivo analítico é avaliar a real barreira de entrada (volume de conhecimento necessário), o tempo estimado de progressão de carreira, o mapeamento das tecnologias dominantes, a distribuição geográfica do mercado global e o prêmio financeiro (média salarial em USD) que justifica ou não o esforço de especialização. Adicionalmente, o estudo testa a eficiência de algoritmos de Recuperação da Informação (RI) no processamento semântico dessas oportunidades de contratação.
+Para responder de forma científica e objetiva, este projeto desenvolveu uma investigação estruturada que cruza microdados do mercado nacional com a amostragem de vagas internacionais. O objetivo analítico é avaliar a real barreira de entrada (volume de conhecimento necessário), o tempo estimado de progressão de carreira, o mapeamento das tecnologias dominantes, a distribuição geográfica do mercado global e o prêmio financeiro (média salarial em USD) que justifica ou não o esforço de especialização.
 
 # Bases de Dados e Coleta Programática
 
@@ -75,12 +75,13 @@ Image(filename='../output/1_vagas_paises.png')
 ```
 
 ### Média Salarial e Justificativa Financeira (USD)
-A resposta objetiva para a pergunta de pesquisa — se vale a pena ingressar na área — reside nos indicadores financeiros consolidados. O cruzamento histórico aponta que os profissionais de segurança figuram consistentemente entre os grupos de maior remuneração de toda a árvore de carreiras tecnológicas.
+A resposta objetiva para a pergunta de pesquisa — se vale a pena ingressar na área — reside nos indicadores financeiros consolidados. O cruzamento histórico aponta que os profissionais de segurança figuram consistentemente entre os grupos de maior remuneração de toda a árvore de carreiras tecnológicas. 
 
 ::: {.callout-note title="Indicadores Financeiros Reais"}
-* **Nível Júnior (Brasil):** Mediana inicial de R$ 5.200 (superando a média geral de TI nacional de R$ 3.800).
-* **Nível Pleno (Brasil):** Remuneração média atinge R$ 10.800.
-* **Mercado Internacional (USD):** Posições estratégicas de arquitetura cloud e segurança de sistemas comandam salários de $120.000 a $150.000 anuais.
+* **Nível Júnior (Brasil):** Mediana inicial de **R$ 5.200** (superando a média geral de TI nacional de R$ 3.800).
+* **Nível Pleno (Brasil):** Remuneração média atinge **R$ 10.800**.
+* **Nível Sênior (Brasil):** Mediana salarial consolidada alcançando **R$ 18.500** no mercado nacional, com tetos em grandes corporações e setores financeiros que ultrapassam frequentemente a marca de **R$ 25.000**.
+* **Mercado Internacional (USD):** Posições estratégicas de arquitetura cloud e segurança de sistemas comandam salários de **$120.000 a $150.000 anuais**.
 :::
 
 ```{python}
